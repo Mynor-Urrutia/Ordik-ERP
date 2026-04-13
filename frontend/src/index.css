@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Escala de texto dentro de modales ── */
+.modal-content .text-xs   { font-size: 0.9rem;   }
+.modal-content .text-sm   { font-size: 1.05rem;  }
+.modal-content .text-base { font-size: 1.15rem;  }
+
+/* Inputs, selects y textareas dentro de modales */
+.modal-content input,
+.modal-content select,
+.modal-content textarea {
+  font-size: 1.05rem;
+  padding-top: 0.6rem;
+  padding-bottom: 0.6rem;
+  min-height: 2.6rem;
+}
+
+/* Labels dentro de modales */
+.modal-content label {
+  font-size: 0.9rem;
+}
+
+/* ── Inputs uniformes para tablas KARDEX masivo ── */
+.bulk-inp {
+  height: 2.2rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  padding: 0 0.5rem;
+  font-size: 0.875rem;
+  background: white;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.bulk-inp:focus {
+  border-color: #2dd4bf;
+  box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.2);
+}

@@ -1,0 +1,429 @@
+import { useEffect, useState, useMemo } from "react";
+import Modal from "../../components/ui/Modal";
+import DataTable from "../../components/ui/DataTable";
+import {
+  marcasService, modelosService, tiposPagoService, tiposTrabajoService,
+  tiposEstatusService, tiposServicioService, personalService, tiposClienteService,
+  tiposProductoService,
+} from "../../services/api/maestros";
+
+// ── Badge activo ─────────────────────────────────────────────────────────────
+const ActiveBadge = ({ value }) => (
+  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+    value ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+  }`}>
+    {value ? "Activo" : "Inactivo"}
+  </span>
+);
+
+// ── Input genérico ───────────────────────────────────────────────────────────
+function Inp({ label, name, form, setForm, type = "text", required = true }) {
+  return (
+    <div>
+      <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
+      <input
+        type={type}
+        value={form[name] ?? ""}
+        onChange={(e) => setForm({ ...form, [name]: e.target.value })}
+        required={required}
+        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+    </div>
+  );
+}
+
+function ActivoToggle({ form, setForm }) {
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        type="checkbox"
+        id="activo"
+        checked={!!form.activo}
+        onChange={(e) => setForm({ ...form, activo: e.target.checked })}
+        className="w-4 h-4 accent-blue-600"
+      />
+      <label htmlFor="activo" className="text-sm text-gray-600">Activo</label>
+    </div>
+  );
+}
+
+// ── CRUD genérico para entidades simples (solo nombre + activo) ──────────────
+function SimpleCRUD({ title, service, extraCols = [], renderForm, EMPTY }) {
+  const [items, setItems] = useState([]);
+  const [form, setForm] = useState(EMPTY);
+  const [editing, setEditing] = useState(null);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [busqueda, setBusqueda] = useState("");
+
+  const load = async () => {
+    setLoading(true);
+    try { const { data } = await service.getAll(); setItems(data.results ?? data); }
+    catch (e) { console.error(e); } finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const filtrados = useMemo(() => {
+    const q = busqueda.toLowerCase().trim();
+    if (!q) return items;
+    return items.filter((r) =>
+      Object.values(r).some((v) => String(v ?? "").toLowerCase().includes(q))
+    );
+  }, [items, busqueda]);
+
+  const cols = [
+    { key: "nombre", label: "Nombre", sortable: true },
+    ...extraCols,
+    { key: "activo", label: "Estado", render: (r) => <ActiveBadge value={r.activo} /> },
+  ];
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      editing ? await service.update(editing.id, form) : await service.create(form);
+      close(); load();
+    } catch (e) { alert(e.response?.data ? JSON.stringify(e.response.data) : "Error"); }
+  };
+
+  const handleEdit = (item) => { setEditing(item); setForm(item); setOpen(true); };
+  const handleDelete = async (id) => {
+    if (!confirm("¿Eliminar este registro?")) return;
+    try { await service.remove(id); load(); }
+    catch (e) { alert("No se puede eliminar — puede estar en uso."); }
+  };
+  const close = () => { setOpen(false); setEditing(null); setForm(EMPTY); };
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold text-gray-800">{title}</h2>
+        <button onClick={() => setOpen(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium">
+          + Nuevo
+        </button>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div className="px-4 pt-3 pb-2 flex items-center gap-3">
+          <input
+            type="text"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="Buscar…"
+            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-1/4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          {busqueda && (
+            <span className="text-xs text-gray-400">
+              {filtrados.length} resultado{filtrados.length !== 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
+        <DataTable columns={cols} data={filtrados} loading={loading} onEdit={handleEdit} onDelete={handleDelete} />
+      </div>
+
+      {open && (
+        <Modal title={editing ? `Editar ${title}` : `Nuevo — ${title}`} onClose={close}>
+          <form onSubmit={handleSubmit} className="space-y-3">
+            {renderForm(form, setForm)}
+            <ActivoToggle form={form} setForm={setForm} />
+            <div className="flex justify-end gap-2 pt-2 border-t">
+              <button type="button" onClick={close} className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50">Cancelar</button>
+              <button type="submit" className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                {editing ? "Actualizar" : "Crear"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+// ── Sección Marcas ────────────────────────────────────────────────────────────
+function Marcas() {
+  return (
+    <SimpleCRUD
+      title="Marcas"
+      service={marcasService}
+      EMPTY={{ nombre: "", activo: true }}
+      renderForm={(form, setForm) => (
+        <Inp label="Nombre de la marca" name="nombre" form={form} setForm={setForm} />
+      )}
+    />
+  );
+}
+
+// ── Sección Modelos ───────────────────────────────────────────────────────────
+function Modelos() {
+  const [marcas, setMarcas] = useState([]);
+  const [items, setItems] = useState([]);
+  const [form, setForm] = useState({ marca: "", nombre: "", activo: true });
+  const [editing, setEditing] = useState(null);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [busqueda, setBusqueda] = useState("");
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [m, md] = await Promise.all([marcasService.getAll(), modelosService.getAll()]);
+      setMarcas(m.data.results ?? m.data);
+      setItems(md.data.results ?? md.data);
+    } catch (e) { console.error(e); } finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const filtrados = useMemo(() => {
+    const q = busqueda.toLowerCase().trim();
+    if (!q) return items;
+    return items.filter((r) =>
+      r.nombre?.toLowerCase().includes(q) || r.marca_nombre?.toLowerCase().includes(q)
+    );
+  }, [items, busqueda]);
+
+  const cols = [
+    { key: "marca_nombre", label: "Marca", sortable: true },
+    { key: "nombre", label: "Modelo", sortable: true },
+    { key: "activo", label: "Estado", render: (r) => <ActiveBadge value={r.activo} /> },
+  ];
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      editing ? await modelosService.update(editing.id, form) : await modelosService.create(form);
+      close(); load();
+    } catch (e) { alert(e.response?.data ? JSON.stringify(e.response.data) : "Error"); }
+  };
+
+  const handleEdit = (item) => { setEditing(item); setForm({ marca: item.marca, nombre: item.nombre, activo: item.activo }); setOpen(true); };
+  const handleDelete = async (id) => {
+    if (!confirm("¿Eliminar este modelo?")) return;
+    try { await modelosService.remove(id); load(); }
+    catch (e) { alert("No se puede eliminar — puede estar en uso."); }
+  };
+  const close = () => { setOpen(false); setEditing(null); setForm({ marca: "", nombre: "", activo: true }); };
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold text-gray-800">Modelos</h2>
+        <button onClick={() => setOpen(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium">
+          + Nuevo
+        </button>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div className="px-4 pt-3 pb-2 flex items-center gap-3">
+          <input type="text" value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="Buscar por marca o modelo…"
+            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-1/4 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          {busqueda && <span className="text-xs text-gray-400">{filtrados.length} resultado{filtrados.length !== 1 ? "s" : ""}</span>}
+        </div>
+        <DataTable columns={cols} data={filtrados} loading={loading} onEdit={handleEdit} onDelete={handleDelete} />
+      </div>
+
+      {open && (
+        <Modal title={editing ? "Editar Modelo" : "Nuevo Modelo"} onClose={close}>
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Marca *</label>
+              <select value={form.marca} onChange={(e) => setForm({ ...form, marca: e.target.value })} required
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">Seleccionar…</option>
+                {marcas.filter((m) => m.activo).map((m) => (
+                  <option key={m.id} value={m.id}>{m.nombre}</option>
+                ))}
+              </select>
+            </div>
+            <Inp label="Nombre del modelo" name="nombre" form={form} setForm={setForm} />
+            <ActivoToggle form={form} setForm={setForm} />
+            <div className="flex justify-end gap-2 pt-2 border-t">
+              <button type="button" onClick={close} className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50">Cancelar</button>
+              <button type="submit" className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                {editing ? "Actualizar" : "Crear"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+// ── Sección Tipos de Estatus (tiene campo módulo) ─────────────────────────────
+const MODULOS = [
+  { value: "cotizaciones", label: "Cotizaciones" },
+  { value: "ordenes_trabajo", label: "Órdenes de Trabajo" },
+  { value: "compras", label: "Compras" },
+  { value: "general", label: "General" },
+];
+
+function TiposEstatus() {
+  return (
+    <SimpleCRUD
+      title="Tipos de Estatus"
+      service={tiposEstatusService}
+      EMPTY={{ nombre: "", modulo: "general", activo: true }}
+      extraCols={[{ key: "modulo_display", label: "Módulo" }]}
+      renderForm={(form, setForm) => (
+        <>
+          <Inp label="Nombre del estatus" name="nombre" form={form} setForm={setForm} />
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Módulo</label>
+            <select value={form.modulo} onChange={(e) => setForm({ ...form, modulo: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              {MODULOS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+            </select>
+          </div>
+        </>
+      )}
+    />
+  );
+}
+
+// ── Sección Tipos de Servicio (tiene descripción) ─────────────────────────────
+function TiposServicio() {
+  return (
+    <SimpleCRUD
+      title="Tipos de Servicio"
+      service={tiposServicioService}
+      EMPTY={{ nombre: "", descripcion: "", activo: true }}
+      renderForm={(form, setForm) => (
+        <>
+          <Inp label="Nombre del servicio" name="nombre" form={form} setForm={setForm} />
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Descripción</label>
+            <textarea value={form.descripcion ?? ""} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} rows={2}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+        </>
+      )}
+    />
+  );
+}
+
+// ── Sección Personal (más campos) ─────────────────────────────────────────────
+function PersonalSection() {
+  return (
+    <SimpleCRUD
+      title="Personal"
+      service={personalService}
+      EMPTY={{ nombre: "", cargo: "", email: "", telefono: "", activo: true }}
+      extraCols={[
+        { key: "cargo", label: "Cargo" },
+        { key: "email", label: "Email" },
+        { key: "telefono", label: "Teléfono" },
+      ]}
+      renderForm={(form, setForm) => (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="col-span-2"><Inp label="Nombre completo" name="nombre" form={form} setForm={setForm} /></div>
+          <Inp label="Cargo" name="cargo" form={form} setForm={setForm} required={false} />
+          <Inp label="Teléfono" name="telefono" form={form} setForm={setForm} required={false} />
+          <div className="col-span-2"><Inp label="Email" name="email" form={form} setForm={setForm} type="email" required={false} /></div>
+        </div>
+      )}
+    />
+  );
+}
+
+// ── Sub-navegación ────────────────────────────────────────────────────────────
+const SECCIONES = [
+  { id: "marcas",          label: "Marcas",            icon: "🏷️",  component: Marcas },
+  { id: "modelos",         label: "Modelos",            icon: "🔧",  component: Modelos },
+  { id: "tipos-pago",      label: "Tipos de Pago",      icon: "💳",  component: () => (
+    <SimpleCRUD
+      title="Tipos de Pago"
+      service={tiposPagoService}
+      EMPTY={{ nombre: "", dias_plazo: 0, activo: true }}
+      extraCols={[{
+        key: "dias_plazo",
+        label: "Días de Plazo",
+        render: (r) => r.dias_plazo === 0
+          ? <span className="text-xs text-gray-400 italic">Inmediato</span>
+          : <span className="text-xs font-medium">{r.dias_plazo} días</span>,
+      }]}
+      renderForm={(form, setForm) => (
+        <>
+          <Inp label="Nombre" name="nombre" form={form} setForm={setForm} />
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Días de Plazo</label>
+            <input
+              type="number" min="0" value={form.dias_plazo ?? 0}
+              onChange={(e) => setForm({ ...form, dias_plazo: parseInt(e.target.value) || 0 })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="text-xs text-gray-400 mt-1">Ingresá 0 para indicar pago inmediato.</p>
+          </div>
+        </>
+      )}
+    />
+  )},
+  { id: "tipos-trabajo",   label: "Tipos de Trabajo",   icon: "⚙️",  component: () => (
+    <SimpleCRUD title="Tipos de Trabajo" service={tiposTrabajoService} EMPTY={{ nombre: "", activo: true }}
+      renderForm={(form, setForm) => <Inp label="Nombre" name="nombre" form={form} setForm={setForm} />} />
+  )},
+  { id: "tipos-estatus",   label: "Tipos de Estatus",   icon: "📌",  component: TiposEstatus },
+  { id: "tipos-servicio",  label: "Tipos de Servicio",  icon: "🛠️",  component: TiposServicio },
+  { id: "personal",        label: "Personal",            icon: "👤",  component: PersonalSection },
+  { id: "tipos-cliente",   label: "Tipos de Cliente",   icon: "🏢",  component: () => (
+    <SimpleCRUD title="Tipos de Cliente" service={tiposClienteService} EMPTY={{ nombre: "", activo: true }}
+      renderForm={(form, setForm) => <Inp label="Nombre" name="nombre" form={form} setForm={setForm} />} />
+  )},
+  { id: "tipos-producto",  label: "Tipos de Producto",  icon: "📦",  component: () => (
+    <SimpleCRUD title="Tipos de Producto" service={tiposProductoService} EMPTY={{ nombre: "", descripcion: "", activo: true }}
+      renderForm={(form, setForm) => (
+        <>
+          <Inp label="Nombre" name="nombre" form={form} setForm={setForm} />
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Descripción</label>
+            <textarea value={form.descripcion ?? ""} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} rows={2}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+        </>
+      )} />
+  )},
+];
+
+// ── Página principal ──────────────────────────────────────────────────────────
+export default function MaestrosPage() {
+  const [activa, setActiva] = useState("marcas");
+  const seccion = SECCIONES.find((s) => s.id === activa);
+  const Componente = seccion?.component;
+
+  return (
+    <div className="flex gap-5 min-h-full">
+      {/* Sub-navegación izquierda */}
+      <aside className="w-52 shrink-0">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="px-4 py-3 bg-slate-700 text-white">
+            <p className="text-xs font-semibold tracking-wide uppercase">Datos Maestros</p>
+          </div>
+          <nav className="py-1">
+            {SECCIONES.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => setActiva(s.id)}
+                className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-left transition-colors hover:bg-gray-50 ${
+                  activa === s.id
+                    ? "bg-blue-50 text-blue-700 font-semibold border-l-4 border-blue-500 pl-3"
+                    : "text-gray-700"
+                }`}
+              >
+                <span className="text-base leading-none">{s.icon}</span>
+                <span>{s.label}</span>
+              </button>
+            ))}
+          </nav>
+        </div>
+      </aside>
+
+      {/* Contenido */}
+      <div className="flex-1 min-w-0">
+        {Componente && <Componente key={activa} />}
+      </div>
+    </div>
+  );
+}
