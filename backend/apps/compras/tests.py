@@ -2,6 +2,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from apps.proveedores.models import Proveedor
 from apps.inventario.models import Producto
+from apps.maestros.models import TipoPago
 from .models import Compra
 
 PROV_DATA = {
@@ -31,12 +32,13 @@ class CompraAPITest(APITestCase):
     def setUp(self):
         self.proveedor = Proveedor.objects.create(**PROV_DATA)
         self.producto = Producto.objects.create(**PROD_DATA, proveedor=self.proveedor)
+        self.tipo_pago = TipoPago.objects.create(nombre="Crédito 30 días", dias_plazo=30)
 
     def test_create_con_items(self):
         payload = {
             "proveedor": self.proveedor.pk,
             "fecha_despacho": "2026-04-15",
-            "tipo_pago": "credito",
+            "tipo_pago": self.tipo_pago.pk,
             "items": [
                 {"producto": self.producto.pk, "cantidad": 5, "costo_unitario": "14000.00"}
             ],
@@ -45,3 +47,16 @@ class CompraAPITest(APITestCase):
         self.assertEqual(r.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Compra.objects.count(), 1)
         self.assertEqual(len(r.data["items"]), 1)
+        self.assertTrue(r.data["correlativo"].startswith("OC-"))
+
+    def test_create_sin_tipo_pago(self):
+        payload = {
+            "proveedor": self.proveedor.pk,
+            "fecha_despacho": "2026-04-15",
+            "items": [
+                {"producto": self.producto.pk, "cantidad": 2, "costo_unitario": "5000.00"}
+            ],
+        }
+        r = self.client.post("/api/compras/", payload, format="json")
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED)
+        self.assertIsNone(r.data["tipo_pago"])
