@@ -41,7 +41,7 @@ class CotizacionViewSet(viewsets.ModelViewSet):
         )
         p.drawRightString(
             width - 50, height - 70,
-            f"Estado: {cotizacion.get_estatus_display()}",
+            f"Estado: {cotizacion.estatus}",
         )
 
         # Client block
