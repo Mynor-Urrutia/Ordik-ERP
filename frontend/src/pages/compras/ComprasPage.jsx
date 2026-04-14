@@ -264,6 +264,143 @@ function PreviewOC({ form, formItems, proveedores, productos, tiposPago, onBack,
   );
 }
 
+// ── Modal Detalle OC ──────────────────────────────────────────────────────────
+function DetalleOC({ oc, onClose }) {
+  const total = (oc.items ?? []).reduce(
+    (acc, it) => acc + (parseFloat(it.costo_unitario) || 0) * (parseInt(it.cantidad) || 0),
+    0
+  );
+
+  const fechaCreacion = oc.fecha_creacion
+    ? new Date(oc.fecha_creacion).toLocaleString("es-GT", {
+        day: "2-digit", month: "long", year: "numeric",
+        hour: "2-digit", minute: "2-digit",
+      })
+    : "—";
+
+  const fechaDespacho = oc.fecha_despacho
+    ? new Date(oc.fecha_despacho + "T00:00:00").toLocaleDateString("es-GT", {
+        day: "2-digit", month: "long", year: "numeric",
+      })
+    : "—";
+
+  return (
+    <Modal title="Detalle de Orden de Compra" onClose={onClose} wide>
+      <div className="space-y-5">
+
+        {/* Cabecera OC */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-5 text-white">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-blue-200 text-xs font-medium uppercase tracking-widest mb-1">
+                Orden de Compra
+              </p>
+              <p className="text-2xl font-bold tracking-wide">{oc.correlativo || `COM-${String(oc.id).padStart(4,"0")}`}</p>
+            </div>
+            <div className="text-right text-sm">
+              <p className="text-blue-200 text-xs mb-0.5">Registrada</p>
+              <p className="font-medium">{fechaCreacion}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Info general */}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="bg-gray-50 rounded-lg p-3">
+            <p className="text-xs text-gray-500 font-medium mb-1">Proveedor</p>
+            <p className="font-semibold text-gray-800 text-sm">{oc.proveedor_nombre ?? `#${oc.proveedor}`}</p>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-3">
+            <p className="text-xs text-gray-500 font-medium mb-1">Fecha de Despacho</p>
+            <p className="font-semibold text-gray-800 text-sm">{fechaDespacho}</p>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-3">
+            <p className="text-xs text-gray-500 font-medium mb-1">Tipo de Pago</p>
+            {oc.tipo_pago_nombre ? (
+              <span className="inline-block bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+                {oc.tipo_pago_nombre}
+              </span>
+            ) : (
+              <p className="text-gray-400 text-sm">—</p>
+            )}
+          </div>
+        </div>
+
+        {oc.notas && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+            <p className="text-xs text-amber-600 font-medium mb-0.5">Notas</p>
+            <p className="text-sm text-amber-900">{oc.notas}</p>
+          </div>
+        )}
+
+        {/* Tabla de productos */}
+        <div>
+          <p className="text-sm font-semibold text-gray-700 mb-2">
+            Productos
+            <span className="ml-2 text-xs font-normal text-gray-400">
+              ({(oc.items ?? []).length} línea{(oc.items ?? []).length !== 1 ? "s" : ""})
+            </span>
+          </p>
+          <div className="border border-gray-200 rounded-xl overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-700 text-white">
+                <tr>
+                  <th className="px-4 py-2.5 text-left font-medium text-xs">Código</th>
+                  <th className="px-4 py-2.5 text-left font-medium text-xs">Producto</th>
+                  <th className="px-4 py-2.5 text-right font-medium text-xs">Cantidad</th>
+                  <th className="px-4 py-2.5 text-right font-medium text-xs">Costo Unit.</th>
+                  <th className="px-4 py-2.5 text-right font-medium text-xs">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {(oc.items ?? []).length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="text-center py-6 text-gray-400 text-xs italic">
+                      Sin productos registrados
+                    </td>
+                  </tr>
+                ) : (
+                  (oc.items ?? []).map((it, i) => {
+                    const subtotal = (parseFloat(it.costo_unitario) || 0) * (parseInt(it.cantidad) || 0);
+                    return (
+                      <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                        <td className="px-4 py-2.5 font-mono text-xs text-blue-600 font-semibold whitespace-nowrap">
+                          {it.producto_cod ?? "—"}
+                        </td>
+                        <td className="px-4 py-2.5 text-gray-800">{it.producto_nombre ?? `#${it.producto}`}</td>
+                        <td className="px-4 py-2.5 text-right text-gray-700">{it.cantidad}</td>
+                        <td className="px-4 py-2.5 text-right text-gray-700">{fmt(it.costo_unitario)}</td>
+                        <td className="px-4 py-2.5 text-right font-semibold text-gray-800">{fmt(subtotal)}</td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+              <tfoot className="bg-gray-50 border-t-2 border-gray-200">
+                <tr>
+                  <td colSpan={4} className="px-4 py-3 text-right font-bold text-gray-700 text-sm">
+                    TOTAL
+                  </td>
+                  <td className="px-4 py-3 text-right font-bold text-blue-700 text-base">
+                    {fmt(total)}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <div className="flex justify-end pt-1 border-t">
+          <button onClick={onClose}
+            className="px-5 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 // ── Componente principal ──────────────────────────────────────────────────────
 export default function ComprasPage() {
   const [items, setItems]         = useState([]);
@@ -273,6 +410,7 @@ export default function ComprasPage() {
   const [form, setForm]           = useState(EMPTY_FORM);
   const [formItems, setFormItems] = useState([{ ...EMPTY_ITEM }]);
   const [editing, setEditing]     = useState(null);
+  const [detalle, setDetalle]     = useState(null);
   const [open, setOpen]           = useState(false);
   const [step, setStep]           = useState(1); // 1=formulario, 2=preview
   const [saving, setSaving]       = useState(false);
@@ -515,11 +653,22 @@ export default function ComprasPage() {
           loading={loading}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          extra={(row) => (
+            <button
+              onClick={() => setDetalle(row)}
+              className="text-indigo-600 hover:text-indigo-800 font-medium"
+            >
+              Ver
+            </button>
+          )}
           sortKey={sortKey}
           sortDir={sortDir}
           onSort={handleSort}
         />
       </div>
+
+      {/* Modal Detalle */}
+      {detalle && <DetalleOC oc={detalle} onClose={() => setDetalle(null)} />}
 
       {/* Modal */}
       {open && (
