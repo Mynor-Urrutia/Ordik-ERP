@@ -394,36 +394,31 @@ export default function MaestrosPage() {
   const Componente = seccion?.component;
 
   return (
-    <div className="flex gap-5 min-h-full">
-      {/* Sub-navegación izquierda */}
-      <aside className="w-52 shrink-0">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-4 py-3 bg-slate-700 text-white">
-            <p className="text-xs font-semibold tracking-wide uppercase">Datos Maestros</p>
-          </div>
-          <nav className="py-1">
-            {SECCIONES.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => setActiva(s.id)}
-                className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-left transition-colors hover:bg-gray-50 ${
-                  activa === s.id
-                    ? "bg-blue-50 text-blue-700 font-semibold border-l-4 border-blue-500 pl-3"
-                    : "text-gray-700"
-                }`}
-              >
-                <span className="text-base leading-none">{s.icon}</span>
-                <span>{s.label}</span>
-              </button>
-            ))}
-          </nav>
-        </div>
-      </aside>
+    <div>
+      <h1 className="text-xl font-bold text-gray-800 mb-4">Datos Maestros</h1>
+
+      {/* Nav tabs */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-5 overflow-x-auto">
+        <nav className="flex border-b border-gray-200 min-w-max">
+          {SECCIONES.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => setActiva(s.id)}
+              className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px ${
+                activa === s.id
+                  ? "border-blue-600 text-blue-700 bg-blue-50/50"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
+            >
+              <span className="text-sm leading-none">{s.icon}</span>
+              <span>{s.label}</span>
+            </button>
+          ))}
+        </nav>
+      </div>
 
       {/* Contenido */}
-      <div className="flex-1 min-w-0">
-        {Componente && <Componente key={activa} />}
-      </div>
+      {Componente && <Componente key={activa} />}
     </div>
   );
 }
