@@ -16,7 +16,7 @@ const fmt = (n) =>
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-const EMPTY_FORM = { proveedor: "", fecha_despacho: today(), tipo_pago: "", notas: "" };
+const EMPTY_FORM = { proveedor: "", fecha_despacho: today(), tipo_pago: "", num_cotizacion_proveedor: "", notas: "" };
 const EMPTY_ITEM = { producto: "", cantidad: "1", costo_unitario: "" };
 
 // ── AutocompleteSearch ────────────────────────────────────────────────────────
@@ -175,7 +175,7 @@ function PreviewOC({ form, formItems, proveedores, productos, tiposPago, onBack,
             Pendiente de guardar
           </span>
         </div>
-        <div className="grid grid-cols-3 gap-4 text-sm">
+        <div className="grid grid-cols-4 gap-4 text-sm">
           <div>
             <p className="text-xs text-gray-500 mb-0.5">Proveedor</p>
             <p className="font-semibold text-gray-800">{proveedor?.razon_social ?? "—"}</p>
@@ -196,6 +196,10 @@ function PreviewOC({ form, formItems, proveedores, productos, tiposPago, onBack,
             <p className="font-semibold text-gray-800">
               {tipoPago ? `${tipoPago.nombre}${tipoPago.dias_plazo > 0 ? ` (${tipoPago.dias_plazo} días)` : ""}` : "—"}
             </p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 mb-0.5">N° Cot. Proveedor</p>
+            <p className="font-semibold text-gray-800">{form.num_cotizacion_proveedor || "—"}</p>
           </div>
         </div>
         {form.notas && (
@@ -305,7 +309,7 @@ function DetalleOC({ oc, onClose }) {
         </div>
 
         {/* Info general */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-4 gap-4">
           <div className="bg-gray-50 rounded-lg p-3">
             <p className="text-xs text-gray-500 font-medium mb-1">Proveedor</p>
             <p className="font-semibold text-gray-800 text-sm">{oc.proveedor_nombre ?? `#${oc.proveedor}`}</p>
@@ -323,6 +327,12 @@ function DetalleOC({ oc, onClose }) {
             ) : (
               <p className="text-gray-400 text-sm">—</p>
             )}
+          </div>
+          <div className="bg-gray-50 rounded-lg p-3">
+            <p className="text-xs text-gray-500 font-medium mb-1">N° Cot. Proveedor</p>
+            <p className="font-semibold text-gray-800 text-sm">
+              {oc.num_cotizacion_proveedor || <span className="text-gray-400 font-normal">—</span>}
+            </p>
           </div>
         </div>
 
@@ -587,6 +597,7 @@ export default function ComprasPage() {
       proveedor: item.proveedor,
       fecha_despacho: item.fecha_despacho,
       tipo_pago: item.tipo_pago ?? "",
+      num_cotizacion_proveedor: item.num_cotizacion_proveedor ?? "",
       notas: item.notas ?? "",
     });
     setFormItems(
@@ -720,7 +731,7 @@ export default function ComprasPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Tipo de Pago</label>
                   <select
@@ -735,6 +746,16 @@ export default function ComprasPage() {
                       </option>
                     ))}
                   </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">N° Cotización Proveedor</label>
+                  <input
+                    type="text"
+                    value={form.num_cotizacion_proveedor}
+                    onChange={(e) => setForm({ ...form, num_cotizacion_proveedor: e.target.value })}
+                    placeholder="Ej. COT-2026-001"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Notas</label>

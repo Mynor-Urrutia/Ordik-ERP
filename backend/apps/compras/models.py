@@ -17,6 +17,11 @@ class Compra(models.Model):
         null=True,
         blank=True,
     )
+    num_cotizacion_proveedor = models.CharField(
+        max_length=100, blank=True,
+        verbose_name="N° Cotización Proveedor",
+        help_text="Número o código de la cotización entregada por el proveedor.",
+    )
     notas = models.TextField(blank=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 

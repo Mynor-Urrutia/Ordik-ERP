@@ -27,6 +27,7 @@ class CompraSerializer(serializers.ModelSerializer):
             "fecha_despacho",
             "tipo_pago",
             "tipo_pago_nombre",
+            "num_cotizacion_proveedor",
             "notas",
             "fecha_creacion",
             "items",
