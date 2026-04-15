@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Marca, Modelo, TipoPago, TipoTrabajo, TipoEstatus, TipoServicio, Personal, TipoCliente, TipoProducto
+from .models import Marca, Modelo, TipoPago, TipoTrabajo, TipoEstatus, TipoServicio, Personal, TipoCliente, TipoProducto, EmpresaConfig
 
 
 class MarcaSerializer(serializers.ModelSerializer):
@@ -58,3 +58,14 @@ class TipoProductoSerializer(serializers.ModelSerializer):
     class Meta:
         model = TipoProducto
         fields = "__all__"
+
+
+class EmpresaConfigSerializer(serializers.ModelSerializer):
+    regimen_fiscal_display = serializers.CharField(
+        source="get_regimen_fiscal_display", read_only=True
+    )
+
+    class Meta:
+        model = EmpresaConfig
+        fields = "__all__"
+        read_only_fields = ["id"]

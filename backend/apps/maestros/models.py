@@ -124,9 +124,90 @@ class TipoCliente(models.Model):
         return self.nombre
 
 
+class EmpresaConfig(models.Model):
+    REGIMEN_CHOICES = [
+        ("utilidades", "Sobre Utilidades de Actividades Lucrativas"),
+        ("simplificado", "Opcional Simplificado sobre Ingresos"),
+        ("pequeno", "Pequeño Contribuyente"),
+    ]
+
+    DEPARTAMENTOS = [
+        ("Alta Verapaz", "Alta Verapaz"),
+        ("Baja Verapaz", "Baja Verapaz"),
+        ("Chimaltenango", "Chimaltenango"),
+        ("Chiquimula", "Chiquimula"),
+        ("El Progreso", "El Progreso"),
+        ("Escuintla", "Escuintla"),
+        ("Guatemala", "Guatemala"),
+        ("Huehuetenango", "Huehuetenango"),
+        ("Izabal", "Izabal"),
+        ("Jalapa", "Jalapa"),
+        ("Jutiapa", "Jutiapa"),
+        ("Petén", "Petén"),
+        ("Quetzaltenango", "Quetzaltenango"),
+        ("Quiché", "Quiché"),
+        ("Retalhuleu", "Retalhuleu"),
+        ("Sacatepéquez", "Sacatepéquez"),
+        ("San Marcos", "San Marcos"),
+        ("Santa Rosa", "Santa Rosa"),
+        ("Sololá", "Sololá"),
+        ("Suchitepéquez", "Suchitepéquez"),
+        ("Totonicapán", "Totonicapán"),
+        ("Zacapa", "Zacapa"),
+    ]
+
+    # Identidad
+    razon_social = models.CharField(max_length=200, blank=True)
+    nombre_comercial = models.CharField(max_length=200, blank=True)
+    nit = models.CharField(max_length=20, blank=True, verbose_name="NIT")
+    tipo_sociedad = models.CharField(max_length=100, blank=True,
+        help_text="Ej: Sociedad Anónima, Empresa Individual, etc.")
+
+    # Dirección
+    direccion = models.TextField(blank=True, verbose_name="Dirección Fiscal")
+    municipio = models.CharField(max_length=100, blank=True)
+    departamento = models.CharField(max_length=100, choices=DEPARTAMENTOS, blank=True)
+    pais = models.CharField(max_length=100, default="Guatemala")
+    codigo_postal = models.CharField(max_length=10, blank=True)
+
+    # Contacto
+    telefono = models.CharField(max_length=20, blank=True)
+    telefono_secundario = models.CharField(max_length=20, blank=True)
+    email = models.EmailField(blank=True)
+    email_facturacion = models.EmailField(blank=True, verbose_name="Email de Facturación")
+    sitio_web = models.URLField(blank=True)
+
+    # Fiscal / Legal
+    regimen_fiscal = models.CharField(
+        max_length=20, choices=REGIMEN_CHOICES, blank=True, verbose_name="Régimen ISR"
+    )
+    numero_rtu = models.CharField(max_length=50, blank=True, verbose_name="N° RTU",
+        help_text="Número de Registro Tributario Unificado (SAT Guatemala)")
+    numero_patente = models.CharField(max_length=50, blank=True, verbose_name="N° Patente de Comercio")
+    representante_legal = models.CharField(max_length=200, blank=True)
+    fecha_constitucion = models.DateField(null=True, blank=True, verbose_name="Fecha de Constitución")
+
+    # Operacional
+    giro_comercial = models.TextField(blank=True,
+        help_text="Descripción de las actividades comerciales principales.")
+    moneda = models.CharField(max_length=10, default="GTQ")
+
+    class Meta:
+        verbose_name = "Configuración de Empresa"
+
+    def __str__(self):
+        return self.razon_social or "Empresa"
+
+
 class TipoProducto(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
     descripcion = models.TextField(blank=True)
+    margen_ganancia = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=0,
+        help_text="Porcentaje de ganancia a aplicar sobre el costo de los productos de este tipo.",
+    )
     activo = models.BooleanField(default=True)
 
     class Meta:

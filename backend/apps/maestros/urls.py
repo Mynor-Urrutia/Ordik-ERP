@@ -1,8 +1,9 @@
+from django.urls import path
 from rest_framework.routers import DefaultRouter
 from .views import (
     MarcaViewSet, ModeloViewSet, TipoPagoViewSet, TipoTrabajoViewSet,
     TipoEstatusViewSet, TipoServicioViewSet, PersonalViewSet, TipoClienteViewSet,
-    TipoProductoViewSet,
+    TipoProductoViewSet, EmpresaConfigView,
 )
 
 router = DefaultRouter()
@@ -16,4 +17,6 @@ router.register("personal", PersonalViewSet, basename="personal")
 router.register("tipos-cliente", TipoClienteViewSet, basename="tipo-cliente")
 router.register("tipos-producto", TipoProductoViewSet, basename="tipo-producto")
 
-urlpatterns = router.urls
+urlpatterns = router.urls + [
+    path("empresa/", EmpresaConfigView.as_view(), name="empresa-config"),
+]

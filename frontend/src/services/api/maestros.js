@@ -17,3 +17,8 @@ export const tiposServicioService = resource("tipos-servicio");
 export const personalService     = resource("personal");
 export const tiposClienteService  = resource("tipos-cliente");
 export const tiposProductoService = resource("tipos-producto");
+
+export const empresaService = {
+  get:    ()     => client.get("/maestros/empresa/"),
+  update: (data) => client.put("/maestros/empresa/", data),
+};

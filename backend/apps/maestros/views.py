@@ -1,10 +1,11 @@
 from rest_framework import viewsets, filters
+from rest_framework.generics import RetrieveUpdateAPIView
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Marca, Modelo, TipoPago, TipoTrabajo, TipoEstatus, TipoServicio, Personal, TipoCliente, TipoProducto
+from .models import Marca, Modelo, TipoPago, TipoTrabajo, TipoEstatus, TipoServicio, Personal, TipoCliente, TipoProducto, EmpresaConfig
 from .serializers import (
     MarcaSerializer, ModeloSerializer, TipoPagoSerializer, TipoTrabajoSerializer,
     TipoEstatusSerializer, TipoServicioSerializer, PersonalSerializer, TipoClienteSerializer,
-    TipoProductoSerializer,
+    TipoProductoSerializer, EmpresaConfigSerializer,
 )
 
 
@@ -80,3 +81,11 @@ class TipoProductoViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ["activo"]
     search_fields = ["nombre"]
+
+
+class EmpresaConfigView(RetrieveUpdateAPIView):
+    serializer_class = EmpresaConfigSerializer
+
+    def get_object(self):
+        obj, _ = EmpresaConfig.objects.get_or_create(pk=1)
+        return obj
