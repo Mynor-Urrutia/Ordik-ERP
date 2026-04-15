@@ -25,7 +25,7 @@ class MovimientoInventarioSerializer(serializers.ModelSerializer):
         fields = [
             "id", "producto", "producto_nombre",
             "tipo", "tipo_display",
-            "cantidad", "fecha", "observacion",
+            "cantidad", "costo_unitario", "fecha", "observacion",
             "proveedor", "proveedor_nombre",
             "numero_factura", "orden_compra",
             "vale_salida", "referencia_ot",

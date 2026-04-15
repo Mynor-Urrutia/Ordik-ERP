@@ -1,6 +1,7 @@
 from django.http import HttpResponse
 from rest_framework import viewsets, filters
 from rest_framework.decorators import action
+from django_filters.rest_framework import DjangoFilterBackend
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 
@@ -15,7 +16,8 @@ class CotizacionViewSet(viewsets.ModelViewSet):
         .all()
     )
     serializer_class = CotizacionSerializer
-    filter_backends = [filters.SearchFilter]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ["cliente"]
     search_fields = ["cliente__razon_social", "estatus"]
 
     @action(detail=True, methods=["get"], url_path="pdf")

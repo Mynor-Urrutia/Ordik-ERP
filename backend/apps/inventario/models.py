@@ -96,6 +96,10 @@ class MovimientoInventario(models.Model):
     )
     numero_factura = models.CharField(max_length=100, blank=True)
     orden_compra = models.CharField(max_length=100, blank=True)
+    costo_unitario = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True,
+        help_text="Costo por unidad en esta entrada (usado para calcular CPP)"
+    )
 
     # Campos para salidas
     vale_salida = models.CharField(max_length=100, blank=True)
@@ -115,7 +119,21 @@ class MovimientoInventario(models.Model):
         if is_new:
             producto = self.producto
             if self.tipo == "entrada":
+                # Costo Promedio Ponderado (CPP)
+                # nuevo_costo = (stock_actual × costo_actual + cantidad × costo_entrada) / (stock_actual + cantidad)
+                if self.costo_unitario is not None:
+                    stock_previo = producto.stock_actual
+                    costo_previo = producto.costo_unitario
+                    nuevo_stock = stock_previo + self.cantidad
+                    nuevo_costo = (
+                        (stock_previo * costo_previo) + (self.cantidad * self.costo_unitario)
+                    ) / nuevo_stock
+                    update_fields = ["stock_actual", "costo_unitario"]
+                    producto.costo_unitario = nuevo_costo.quantize(Decimal("0.01"))
+                else:
+                    update_fields = ["stock_actual"]
                 producto.stock_actual += self.cantidad
+                producto.save(update_fields=update_fields)
             else:
                 producto.stock_actual = max(0, producto.stock_actual - self.cantidad)
-            producto.save(update_fields=["stock_actual"])
+                producto.save(update_fields=["stock_actual"])
