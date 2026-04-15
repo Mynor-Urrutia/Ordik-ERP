@@ -27,40 +27,101 @@ const compraTotal = (compra) =>
 
 // ── Formulario ────────────────────────────────────────────────────────────────
 const EMPTY = {
-  razon_social: "", nit: "", email: "", telefono: "",
-  direccion_comercial: "", nombre_comercial: "",
+  razon_social: "", nit: "", nombre_comercial: "", tipo_proveedor: "",
+  numero_rtu: "", sitio_web: "",
+  direccion_comercial: "", municipio: "", departamento: "", pais: "Guatemala",
+  telefono: "", email: "",
   nombre_contacto: "", telefono_contacto: "", email_contacto: "",
-  tipo_pago: "",
+  tipo_pago: "", banco: "", numero_cuenta: "", tipo_cuenta: "",
+  notas: "",
 };
+
+const DEPARTAMENTOS_GT = [
+  "Alta Verapaz","Baja Verapaz","Chimaltenango","Chiquimula","El Progreso",
+  "Escuintla","Guatemala","Huehuetenango","Izabal","Jalapa","Jutiapa","Petén",
+  "Quetzaltenango","Quiché","Retalhuleu","Sacatepéquez","San Marcos","Santa Rosa",
+  "Sololá","Suchitepéquez","Totonicapán","Zacapa",
+];
+
+const BANCOS_GT = [
+  "Banco Industrial", "Banco G&T Continental", "Banco de los Trabajadores (Bantrab)",
+  "Banco Agromercantil (BAM)", "Banco Internacional", "Banco Promerica",
+  "Banco Ficohsa", "Banco Azteca", "Banco de Desarrollo Rural (Banrural)",
+  "Banco Inmobiliario", "Crédito Hipotecario Nacional (CHN)", "Otro",
+];
 
 const COLS = [
   { key: "razon_social",    label: "Razón Social",    sortable: true },
   { key: "nit",             label: "NIT",             sortable: true },
   { key: "nombre_comercial",label: "Nombre Comercial",sortable: true },
-  { key: "email",           label: "Email" },
-  { key: "telefono",        label: "Teléfono" },
+  {
+    key: "tipo_proveedor",
+    label: "Tipo",
+    render: (r) => r.tipo_proveedor
+      ? <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-teal-50 text-teal-700">{r.tipo_proveedor}</span>
+      : <span className="text-gray-300 text-xs">—</span>,
+  },
+  { key: "telefono", label: "Teléfono" },
   {
     key: "tipo_pago",
     label: "Tipo de Pago",
-    render: (r) => (
-      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700">
-        {r.tipo_pago || "—"}
-      </span>
-    ),
+    render: (r) => r.tipo_pago
+      ? <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700">{r.tipo_pago}</span>
+      : <span className="text-gray-300 text-xs">—</span>,
   },
 ];
 
-function Input({ label, name, form, setForm, type = "text" }) {
+// ── Helpers de formulario ─────────────────────────────────────────────────────
+function PField({ label, children, span = 1 }) {
+  const cls = span === 2 ? "col-span-2" : span === 3 ? "col-span-3" : "";
   return (
-    <div>
+    <div className={cls}>
       <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function PInp({ label, name, form, setForm, type = "text", placeholder = "", span, required = false }) {
+  return (
+    <PField label={label} span={span}>
       <input
         type={type}
-        value={form[name]}
+        value={form[name] ?? ""}
         onChange={(e) => setForm({ ...form, [name]: e.target.value })}
-        required
+        placeholder={placeholder}
+        required={required}
         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
       />
+    </PField>
+  );
+}
+
+function PSel({ label, name, form, setForm, options, placeholder = "— Seleccionar —", span }) {
+  return (
+    <PField label={label} span={span}>
+      <select
+        value={form[name] ?? ""}
+        onChange={(e) => setForm({ ...form, [name]: e.target.value })}
+        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+      >
+        <option value="">{placeholder}</option>
+        {options.map((o) => (
+          <option key={typeof o === "string" ? o : o.value} value={typeof o === "string" ? o : o.value}>
+            {typeof o === "string" ? o : o.label}
+          </option>
+        ))}
+      </select>
+    </PField>
+  );
+}
+
+// ── Sección del formulario ────────────────────────────────────────────────────
+function FormSection({ title, children }) {
+  return (
+    <div className="bg-gray-50 rounded-xl border border-gray-200 p-5">
+      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">{title}</h3>
+      <div className="grid grid-cols-3 gap-4">{children}</div>
     </div>
   );
 }
@@ -222,7 +283,11 @@ export default function ProveedoresPage() {
     }
   };
 
-  const handleEdit   = (item) => { setEditing(item); setForm(item); setOpen(true); };
+  const handleEdit = (item) => {
+    setEditing(item);
+    setForm({ ...EMPTY, ...item });
+    setOpen(true);
+  };
   const handleDelete = async (id) => {
     if (!confirm("¿Eliminar este proveedor?")) return;
     await proveedoresService.remove(id); load();
@@ -278,43 +343,105 @@ export default function ProveedoresPage() {
 
       {/* ── Modal: CRUD ── */}
       {open && (
-        <Modal title={editing ? "Editar Proveedor" : "Nuevo Proveedor"} onClose={close}>
-          <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-3">
-            <Input label="Razón Social"     name="razon_social"     form={form} setForm={setForm} />
-            <Input label="NIT"              name="nit"              form={form} setForm={setForm} />
-            <Input label="Email"            name="email"            form={form} setForm={setForm} type="email" />
-            <Input label="Teléfono"         name="telefono"         form={form} setForm={setForm} />
-            <div className="col-span-2">
-              <Input label="Dirección Comercial" name="direccion_comercial" form={form} setForm={setForm} />
-            </div>
-            <Input label="Nombre Comercial" name="nombre_comercial" form={form} setForm={setForm} />
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Tipo de Pago *</label>
-              <select
-                value={form.tipo_pago}
-                onChange={(e) => setForm({ ...form, tipo_pago: e.target.value })}
-                required
+        <Modal title={editing ? "Editar Proveedor" : "Nuevo Proveedor"} onClose={close} wide>
+          <form onSubmit={handleSubmit} className="space-y-5">
+
+            {/* Identidad */}
+            <FormSection title="Identidad Comercial">
+              <PInp label="Razón Social *" name="razon_social" form={form} setForm={setForm}
+                placeholder="Nombre legal completo" required span={2} />
+              <PInp label="NIT *" name="nit" form={form} setForm={setForm}
+                placeholder="Ej: 1234567-8" required />
+              <PInp label="Nombre Comercial" name="nombre_comercial" form={form} setForm={setForm}
+                placeholder="Marca o nombre de fantasía" span={2} />
+              <PSel label="Tipo de Proveedor" name="tipo_proveedor" form={form} setForm={setForm}
+                options={["Bienes", "Servicios", "Ambos"]} />
+              <PInp label="N° RTU (SAT)" name="numero_rtu" form={form} setForm={setForm}
+                placeholder="Registro Tributario Unificado" />
+              <PInp label="Sitio Web" name="sitio_web" form={form} setForm={setForm}
+                type="url" placeholder="https://proveedor.com" span={2} />
+            </FormSection>
+
+            {/* Dirección */}
+            <FormSection title="Dirección">
+              <PField label="Dirección Comercial" span={3}>
+                <textarea
+                  value={form.direccion_comercial ?? ""}
+                  onChange={(e) => setForm({ ...form, direccion_comercial: e.target.value })}
+                  rows={2}
+                  placeholder="Calle, número, zona, colonia…"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </PField>
+              <PInp label="Municipio" name="municipio" form={form} setForm={setForm} />
+              <PSel label="Departamento" name="departamento" form={form} setForm={setForm}
+                options={DEPARTAMENTOS_GT} />
+              <PInp label="País" name="pais" form={form} setForm={setForm} />
+            </FormSection>
+
+            {/* Contacto corporativo */}
+            <FormSection title="Contacto Corporativo">
+              <PInp label="Teléfono" name="telefono" form={form} setForm={setForm}
+                placeholder="+502 2234-5678" />
+              <PInp label="Email" name="email" form={form} setForm={setForm}
+                type="email" placeholder="info@proveedor.com" span={2} />
+            </FormSection>
+
+            {/* Persona de contacto */}
+            <FormSection title="Persona de Contacto">
+              <PInp label="Nombre" name="nombre_contacto" form={form} setForm={setForm}
+                placeholder="Nombre completo" />
+              <PInp label="Teléfono" name="telefono_contacto" form={form} setForm={setForm}
+                placeholder="+502 5555-1234" />
+              <PInp label="Email" name="email_contacto" form={form} setForm={setForm}
+                type="email" placeholder="contacto@proveedor.com" />
+            </FormSection>
+
+            {/* Pago y banco */}
+            <FormSection title="Condiciones de Pago y Datos Bancarios">
+              <PField label="Tipo de Pago">
+                <select
+                  value={form.tipo_pago ?? ""}
+                  onChange={(e) => setForm({ ...form, tipo_pago: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                >
+                  <option value="">— Sin especificar —</option>
+                  {tiposPago.map((tp) => (
+                    <option key={tp.id} value={tp.nombre}>
+                      {tp.nombre}{tp.dias_plazo > 0 ? ` (${tp.dias_plazo} días)` : " (Inmediato)"}
+                    </option>
+                  ))}
+                </select>
+              </PField>
+              <PSel label="Banco" name="banco" form={form} setForm={setForm}
+                options={BANCOS_GT} placeholder="— Seleccionar banco —" />
+              <PInp label="N° de Cuenta" name="numero_cuenta" form={form} setForm={setForm}
+                placeholder="000-000000-0" />
+              <PSel label="Tipo de Cuenta" name="tipo_cuenta" form={form} setForm={setForm}
+                options={["Monetaria", "Ahorro"]} />
+            </FormSection>
+
+            {/* Notas */}
+            <div className="bg-gray-50 rounded-xl border border-gray-200 p-5">
+              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Notas</h3>
+              <textarea
+                value={form.notas ?? ""}
+                onChange={(e) => setForm({ ...form, notas: e.target.value })}
+                rows={3}
+                placeholder="Observaciones generales sobre el proveedor…"
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              >
-                <option value="">Seleccionar…</option>
-                {tiposPago.map((tp) => (
-                  <option key={tp.id} value={tp.nombre}>
-                    {tp.nombre}{tp.dias_plazo > 0 ? ` (${tp.dias_plazo} días)` : " (Inmediato)"}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
-            <Input label="Nombre Contacto"   name="nombre_contacto"   form={form} setForm={setForm} />
-            <Input label="Teléfono Contacto" name="telefono_contacto" form={form} setForm={setForm} />
-            <div className="col-span-2">
-              <Input label="Email Contacto" name="email_contacto" form={form} setForm={setForm} type="email" />
-            </div>
-            <div className="col-span-2 flex justify-end gap-2 pt-2 border-t">
-              <button type="button" onClick={close} className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50">
+
+            {/* Acciones */}
+            <div className="flex justify-end gap-2 pt-1 border-t">
+              <button type="button" onClick={close}
+                className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-600">
                 Cancelar
               </button>
-              <button type="submit" className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">
-                {editing ? "Actualizar" : "Crear"}
+              <button type="submit"
+                className="px-5 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium">
+                {editing ? "Actualizar Proveedor" : "Crear Proveedor"}
               </button>
             </div>
           </form>
