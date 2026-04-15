@@ -14,7 +14,37 @@ const fmt = (n) =>
     maximumFractionDigits: 2,
   })}`;
 
+const fmtDateTime = (iso) =>
+  iso
+    ? new Date(iso).toLocaleString("es-GT", {
+        day: "2-digit", month: "short", year: "numeric",
+        hour: "2-digit", minute: "2-digit",
+      })
+    : "—";
+
 const today = () => new Date().toISOString().slice(0, 10);
+
+const OC_ESTATUS = ["Pendiente", "Confirmada", "En tránsito", "Recibida", "Cancelada"];
+
+const OC_ESTATUS_BADGE = {
+  Pendiente:      "bg-amber-100 text-amber-700",
+  Confirmada:     "bg-blue-100 text-blue-700",
+  "En tránsito":  "bg-purple-100 text-purple-700",
+  Recibida:       "bg-green-100 text-green-700",
+  Cancelada:      "bg-red-100 text-red-700",
+};
+
+const OC_HISTORIAL_COLOR = {
+  creacion: { dot: "bg-green-500",  badge: "bg-green-100 text-green-700" },
+  estatus:  { dot: "bg-blue-500",   badge: "bg-blue-100 text-blue-700"  },
+  edicion:  { dot: "bg-amber-500",  badge: "bg-amber-100 text-amber-700"},
+};
+
+const OC_HISTORIAL_LABEL = {
+  creacion: "Creación",
+  estatus:  "Estatus",
+  edicion:  "Edición",
+};
 
 const EMPTY_FORM = { proveedor: "", fecha_despacho: today(), tipo_pago: "", num_cotizacion_proveedor: "", notas: "" };
 const EMPTY_ITEM = { producto: "", cantidad: "1", costo_unitario: "" };
@@ -268,19 +298,82 @@ function PreviewOC({ form, formItems, proveedores, productos, tiposPago, onBack,
   );
 }
 
+// ── StatusDropdown ────────────────────────────────────────────────────────────
+function StatusDropdown({ oc, onUpdate }) {
+  const [open, setOpen]       = useState(false);
+  const [saving, setSaving]   = useState(false);
+  const [pos, setPos]         = useState({ top: 0, left: 0 });
+  const btnRef                = useRef(null);
+
+  const calcPos = () => {
+    if (!btnRef.current) return;
+    const r = btnRef.current.getBoundingClientRect();
+    setPos({ top: r.bottom + 4, left: r.left });
+  };
+
+  const handleChange = async (nuevo) => {
+    if (nuevo === oc.estatus) { setOpen(false); return; }
+    setSaving(true);
+    setOpen(false);
+    try {
+      const { data } = await comprasService.cambiarEstatus(oc.id, nuevo);
+      onUpdate(data);
+    } catch (e) { console.error(e); }
+    finally { setSaving(false); }
+  };
+
+  const badgeClass = OC_ESTATUS_BADGE[oc.estatus] ?? "bg-gray-100 text-gray-600";
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        disabled={saving}
+        onClick={() => { calcPos(); setOpen((o) => !o); }}
+        className={`px-2.5 py-0.5 rounded-full text-xs font-medium flex items-center gap-1 transition-opacity ${badgeClass} ${saving ? "opacity-50 cursor-not-allowed" : "hover:opacity-75 cursor-pointer"}`}
+      >
+        {saving ? "…" : oc.estatus ?? "—"}
+        {!saving && <span className="text-[9px] opacity-50">▼</span>}
+      </button>
+
+      {open && createPortal(
+        <>
+          <div className="fixed inset-0 z-[9998]" onClick={() => setOpen(false)} />
+          <div
+            style={{ position: "fixed", top: pos.top, left: pos.left, zIndex: 9999 }}
+            className="bg-white border border-gray-200 rounded-xl shadow-2xl py-1.5 min-w-[150px]"
+          >
+            {OC_ESTATUS.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onMouseDown={() => handleChange(s)}
+                className={`w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 flex items-center gap-2 ${
+                  s === oc.estatus ? "font-semibold" : "text-gray-700"
+                }`}
+              >
+                <span className={`w-2 h-2 rounded-full shrink-0 ${
+                  OC_ESTATUS_BADGE[s]?.split(" ")[0] ?? "bg-gray-300"
+                }`} />
+                {s}
+                {s === oc.estatus && <span className="ml-auto text-gray-400 text-[10px]">✓</span>}
+              </button>
+            ))}
+          </div>
+        </>,
+        document.body
+      )}
+    </>
+  );
+}
+
 // ── Modal Detalle OC ──────────────────────────────────────────────────────────
-function DetalleOC({ oc, onClose }) {
+function DetalleOC({ oc, onClose, onUpdate }) {
   const total = (oc.items ?? []).reduce(
     (acc, it) => acc + (parseFloat(it.costo_unitario) || 0) * (parseInt(it.cantidad) || 0),
     0
   );
-
-  const fechaCreacion = oc.fecha_creacion
-    ? new Date(oc.fecha_creacion).toLocaleString("es-GT", {
-        day: "2-digit", month: "long", year: "numeric",
-        hour: "2-digit", minute: "2-digit",
-      })
-    : "—";
 
   const fechaDespacho = oc.fecha_despacho
     ? new Date(oc.fecha_despacho + "T00:00:00").toLocaleDateString("es-GT", {
@@ -294,16 +387,22 @@ function DetalleOC({ oc, onClose }) {
 
         {/* Cabecera OC */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-5 text-white">
-          <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-blue-200 text-xs font-medium uppercase tracking-widest mb-1">
                 Orden de Compra
               </p>
-              <p className="text-2xl font-bold tracking-wide">{oc.correlativo || `COM-${String(oc.id).padStart(4,"0")}`}</p>
+              <p className="text-2xl font-bold tracking-wide">
+                {oc.correlativo || `COM-${String(oc.id).padStart(4, "0")}`}
+              </p>
             </div>
-            <div className="text-right text-sm">
-              <p className="text-blue-200 text-xs mb-0.5">Registrada</p>
-              <p className="font-medium">{fechaCreacion}</p>
+            <div className="flex flex-col items-end gap-2 shrink-0">
+              <div className="text-right text-sm">
+                <p className="text-blue-200 text-xs mb-0.5">Registrada</p>
+                <p className="font-medium">{fmtDateTime(oc.fecha_creacion)}</p>
+              </div>
+              {/* Estatus con dropdown */}
+              <StatusDropdown oc={oc} onUpdate={onUpdate} />
             </div>
           </div>
         </div>
@@ -388,16 +487,49 @@ function DetalleOC({ oc, onClose }) {
               </tbody>
               <tfoot className="bg-gray-50 border-t-2 border-gray-200">
                 <tr>
-                  <td colSpan={4} className="px-4 py-3 text-right font-bold text-gray-700 text-sm">
-                    TOTAL
-                  </td>
-                  <td className="px-4 py-3 text-right font-bold text-blue-700 text-base">
-                    {fmt(total)}
-                  </td>
+                  <td colSpan={4} className="px-4 py-3 text-right font-bold text-gray-700 text-sm">TOTAL</td>
+                  <td className="px-4 py-3 text-right font-bold text-blue-700 text-base">{fmt(total)}</td>
                 </tr>
               </tfoot>
             </table>
           </div>
+        </div>
+
+        {/* ── Historial de cambios ── */}
+        <div>
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+            Historial de cambios
+          </h3>
+          {(oc.historial ?? []).length === 0 ? (
+            <p className="text-xs text-gray-400 italic">Sin registros de cambios.</p>
+          ) : (
+            <div className="space-y-0">
+              {(oc.historial ?? []).map((h, i) => {
+                const colors = OC_HISTORIAL_COLOR[h.tipo] ?? { dot: "bg-gray-400", badge: "bg-gray-100 text-gray-600" };
+                const label  = OC_HISTORIAL_LABEL[h.tipo] ?? h.tipo;
+                const isLast = i === (oc.historial.length - 1);
+                return (
+                  <div key={h.id} className="flex gap-3">
+                    {/* Timeline line + dot */}
+                    <div className="flex flex-col items-center shrink-0">
+                      <div className={`w-2.5 h-2.5 rounded-full mt-1 shrink-0 ${colors.dot}`} />
+                      {!isLast && <div className="w-px flex-1 bg-gray-200 mt-1" />}
+                    </div>
+                    {/* Content */}
+                    <div className={`pb-4 flex-1 min-w-0 ${isLast ? "" : ""}`}>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${colors.badge}`}>
+                          {label}
+                        </span>
+                        <span className="text-xs text-gray-400">{fmtDateTime(h.fecha)}</span>
+                      </div>
+                      <p className="text-sm text-gray-700 leading-relaxed">{h.descripcion}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end pt-1 border-t">
@@ -431,6 +563,11 @@ export default function ComprasPage() {
 
   useEffect(() => { load(); loadOpciones(); }, []);
 
+  const handleEstatusUpdate = useCallback((updated) => {
+    setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+    setDetalle((d) => (d?.id === updated.id ? updated : d));
+  }, []);
+
   const load = async () => {
     setLoading(true);
     try {
@@ -460,6 +597,11 @@ export default function ComprasPage() {
 
   // ── Tabla ────────────────────────────────────────────────────────────────
   const columnas = useMemo(() => [
+    {
+      key: "estatus",
+      label: "Estatus",
+      render: (r) => <StatusDropdown oc={r} onUpdate={handleEstatusUpdate} />,
+    },
     {
       key: "correlativo",
       label: "OC",
@@ -515,7 +657,7 @@ export default function ComprasPage() {
       label: "# Ítems",
       render: (r) => r.items?.length ?? 0,
     },
-  ], [proveedorMap]);
+  ], [proveedorMap, handleEstatusUpdate]);
 
   const itemsFiltrados = useMemo(() => {
     const q = busqueda.toLowerCase().trim();
@@ -679,7 +821,13 @@ export default function ComprasPage() {
       </div>
 
       {/* Modal Detalle */}
-      {detalle && <DetalleOC oc={detalle} onClose={() => setDetalle(null)} />}
+      {detalle && (
+        <DetalleOC
+          oc={detalle}
+          onClose={() => setDetalle(null)}
+          onUpdate={handleEstatusUpdate}
+        />
+      )}
 
       {/* Modal */}
       {open && (
