@@ -29,6 +29,16 @@ Sistema ERP interno construido con Django REST Framework + React 18, orientado a
 
 ## Funcionalidades principales
 
+### Dashboard
+- Panel de control con KPIs en tiempo real: OTs activas, cotizaciones aprobadas, monto invertido en compras, stock bajo
+- Distribución visual de OTs y cotizaciones por estatus con barras de progreso
+- Tablas de actividad reciente: últimas 5 OTs y cotizaciones con acceso directo a cada módulo
+
+### Órdenes de Trabajo
+- Exportación a PDF por OT: encabezado con datos de empresa, detalle de cliente, tipo de trabajo, técnico, fechas y descripción
+- Cierre formal de OT: formulario de cierre con fecha de finalización, horas trabajadas, informe de cierre, nombre del receptor y confirmación de firma del cliente
+- El PDF incluye sección de cierre (si la OT está finalizada) y área de firmas: técnico, supervisor y cliente
+
 ### Cotizaciones
 - Colores de estatus diferenciados: Borrador (gris), Enviada (azul), Aprobada (verde), Rechazada (rojo), Vencida (naranja)
 - Modal de detalle con ítems, totales desglosados (subtotal / IVA / ISR) y condiciones comerciales

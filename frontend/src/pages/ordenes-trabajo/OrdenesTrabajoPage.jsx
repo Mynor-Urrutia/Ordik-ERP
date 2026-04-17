@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faFilePdf, faCheckCircle } from "@fortawesome/free-solid-svg-icons";
 import { ordenesTrabajoService } from "../../services/api/ordenesTrabajo";
 import { cotizacionesService } from "../../services/api/cotizaciones";
 import { clientesService } from "../../services/api/clientes";
@@ -18,6 +18,14 @@ const EMPTY = {
   fecha_inicio: "",
   fecha_finalizado: "",
   cotizacion: "",
+};
+
+const EMPTY_CIERRE = {
+  observaciones_cierre: "",
+  horas_trabajadas: "",
+  nombre_receptor: "",
+  firma_obtenida: false,
+  fecha_finalizado: new Date().toISOString().split("T")[0],
 };
 
 const COLS = [
@@ -62,6 +70,14 @@ export default function OrdenesTrabajoPage() {
   const [busqueda, setBusqueda] = useState("");
   const [sortKey, setSortKey] = useState("id");
   const [sortDir, setSortDir] = useState("desc");
+
+  // Modal cierre formal
+  const [cierreOt, setCierreOt] = useState(null);
+  const [cierreForm, setCierreForm] = useState(EMPTY_CIERRE);
+  const [cierreLoading, setCierreLoading] = useState(false);
+
+  // PDF loading
+  const [pdfLoading, setPdfLoading] = useState(null);
 
   useEffect(() => {
     load();
@@ -160,6 +176,62 @@ export default function OrdenesTrabajoPage() {
 
   const close = () => { setOpen(false); setEditing(null); setForm(EMPTY); };
 
+  // ── Cierre formal ──────────────────────────────────────────────────────────
+  const abrirCierre = (ot) => {
+    setCierreOt(ot);
+    setCierreForm({
+      ...EMPTY_CIERRE,
+      observaciones_cierre: ot.observaciones_cierre || "",
+      horas_trabajadas: ot.horas_trabajadas || "",
+      nombre_receptor: ot.nombre_receptor || "",
+      firma_obtenida: ot.firma_obtenida || false,
+      fecha_finalizado: ot.fecha_finalizado || new Date().toISOString().split("T")[0],
+    });
+  };
+
+  const handleCierreSubmit = async (e) => {
+    e.preventDefault();
+    setCierreLoading(true);
+    try {
+      await ordenesTrabajoService.update(cierreOt.id, {
+        ...cierreOt,
+        cliente: cierreOt.cliente ?? null,
+        cotizacion: cierreOt.cotizacion ?? null,
+        observaciones_cierre: cierreForm.observaciones_cierre,
+        horas_trabajadas: cierreForm.horas_trabajadas || null,
+        nombre_receptor: cierreForm.nombre_receptor,
+        firma_obtenida: cierreForm.firma_obtenida,
+        fecha_finalizado: cierreForm.fecha_finalizado,
+        estatus: cierreOt.estatus || "Finalizado",
+      });
+      setCierreOt(null);
+      load();
+    } catch (err) {
+      alert(err.response?.data ? JSON.stringify(err.response.data) : "Error al guardar cierre");
+    } finally {
+      setCierreLoading(false);
+    }
+  };
+
+  // ── PDF ───────────────────────────────────────────────────────────────────
+  const handleExportPdf = async (ot) => {
+    setPdfLoading(ot.id);
+    try {
+      const { data } = await ordenesTrabajoService.exportarPdf(ot.id);
+      const url = URL.createObjectURL(new Blob([data], { type: "application/pdf" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `OT-${String(ot.id).padStart(4, "0")}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Error al generar PDF");
+      console.error(err);
+    } finally {
+      setPdfLoading(null);
+    }
+  };
+
   const inp = (name, label, type = "text") => (
     <div>
       <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
@@ -167,6 +239,40 @@ export default function OrdenesTrabajoPage() {
         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
     </div>
   );
+
+  // Columnas con acciones extra (cierre + PDF)
+  const columnsConAcciones = useMemo(() => [
+    ...COLS,
+    {
+      key: "_acciones_ot",
+      label: "",
+      render: (r) => (
+        <div className="flex items-center gap-1.5">
+          {/* Cerrar OT */}
+          {!r.fecha_finalizado && (
+            <button
+              onClick={(e) => { e.stopPropagation(); abrirCierre(r); }}
+              title="Cerrar OT"
+              className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-teal-50 hover:bg-teal-100 text-teal-700 rounded-md border border-teal-200 transition-colors"
+            >
+              <FontAwesomeIcon icon={faCheckCircle} className="text-xs" />
+              Cerrar
+            </button>
+          )}
+          {/* PDF */}
+          <button
+            onClick={(e) => { e.stopPropagation(); handleExportPdf(r); }}
+            title="Exportar PDF"
+            disabled={pdfLoading === r.id}
+            className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-md border border-rose-200 transition-colors disabled:opacity-50"
+          >
+            <FontAwesomeIcon icon={faFilePdf} className="text-xs" />
+            {pdfLoading === r.id ? "…" : "PDF"}
+          </button>
+        </div>
+      ),
+    },
+  ], [pdfLoading]);
 
   return (
     <div>
@@ -194,7 +300,7 @@ export default function OrdenesTrabajoPage() {
           )}
         </div>
         <DataTable
-          columns={COLS}
+          columns={columnsConAcciones}
           data={itemsFiltrados}
           loading={loading}
           onEdit={handleEdit}
@@ -205,11 +311,11 @@ export default function OrdenesTrabajoPage() {
         />
       </div>
 
+      {/* ── Modal nueva/editar OT ──────────────────────────────────────────── */}
       {open && (
         <Modal title={editing ? "Editar OT" : "Nueva Orden de Trabajo"} onClose={close}>
           <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-3">
 
-            {/* Cliente */}
             <div className="col-span-2">
               <label className="block text-xs font-medium text-gray-600 mb-1">Cliente</label>
               <select value={form.cliente} onChange={(e) => set("cliente", e.target.value)}
@@ -221,7 +327,6 @@ export default function OrdenesTrabajoPage() {
               </select>
             </div>
 
-            {/* Tipo de Cliente — desde datos maestros */}
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Tipo de Cliente *</label>
               <select value={form.tipo_cliente} onChange={(e) => set("tipo_cliente", e.target.value)} required
@@ -233,7 +338,6 @@ export default function OrdenesTrabajoPage() {
               </select>
             </div>
 
-            {/* Tipo de Trabajo — desde datos maestros */}
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Tipo de Trabajo *</label>
               <select value={form.tipo_trabajo} onChange={(e) => set("tipo_trabajo", e.target.value)} required
@@ -245,7 +349,6 @@ export default function OrdenesTrabajoPage() {
               </select>
             </div>
 
-            {/* Estatus — desde datos maestros */}
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Estatus</label>
               <select value={form.estatus} onChange={(e) => set("estatus", e.target.value)}
@@ -257,7 +360,6 @@ export default function OrdenesTrabajoPage() {
               </select>
             </div>
 
-            {/* Técnico Asignado — desde datos maestros / personal */}
             <div className="col-span-2">
               <label className="block text-xs font-medium text-gray-600 mb-1">Técnico Asignado</label>
               <select value={form.tecnico_asignado} onChange={(e) => set("tecnico_asignado", e.target.value)}
@@ -297,6 +399,106 @@ export default function OrdenesTrabajoPage() {
               <button type="button" onClick={close} className="px-4 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-300">Cancelar</button>
               <button type="submit" className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                 {editing ? "Actualizar" : "Crear"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ── Modal cierre formal ────────────────────────────────────────────── */}
+      {cierreOt && (
+        <Modal
+          title={`Cierre formal — OT-${String(cierreOt.id).padStart(4, "0")}`}
+          onClose={() => setCierreOt(null)}
+        >
+          <form onSubmit={handleCierreSubmit} className="space-y-4">
+
+            {/* Info de la OT */}
+            <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg px-4 py-3 text-sm text-gray-600 dark:text-slate-300 space-y-1">
+              <p><span className="font-semibold">Cliente:</span> {cierreOt.cliente_nombre || "—"}</p>
+              <p><span className="font-semibold">Trabajo:</span> {cierreOt.tipo_trabajo} — {cierreOt.tipo_cliente}</p>
+              <p><span className="font-semibold">Técnico:</span> {cierreOt.tecnico_asignado || "—"}</p>
+            </div>
+
+            {/* Fecha finalizado */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Fecha de cierre *</label>
+              <input
+                type="date"
+                value={cierreForm.fecha_finalizado}
+                onChange={(e) => setCierreForm((f) => ({ ...f, fecha_finalizado: e.target.value }))}
+                required
+                className="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              />
+            </div>
+
+            {/* Horas trabajadas */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Horas trabajadas</label>
+              <input
+                type="number"
+                step="0.5"
+                min="0"
+                value={cierreForm.horas_trabajadas}
+                onChange={(e) => setCierreForm((f) => ({ ...f, horas_trabajadas: e.target.value }))}
+                placeholder="Ej: 4.5"
+                className="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              />
+            </div>
+
+            {/* Observaciones de cierre */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Observaciones / Informe de cierre *</label>
+              <textarea
+                value={cierreForm.observaciones_cierre}
+                onChange={(e) => setCierreForm((f) => ({ ...f, observaciones_cierre: e.target.value }))}
+                rows={4}
+                required
+                placeholder="Describa el trabajo realizado, materiales utilizados, observaciones finales…"
+                className="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+              />
+            </div>
+
+            {/* Nombre receptor */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Nombre de quien recibe</label>
+              <input
+                type="text"
+                value={cierreForm.nombre_receptor}
+                onChange={(e) => setCierreForm((f) => ({ ...f, nombre_receptor: e.target.value }))}
+                placeholder="Nombre completo del receptor / cliente"
+                className="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              />
+            </div>
+
+            {/* Firma obtenida */}
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={cierreForm.firma_obtenida}
+                onChange={(e) => setCierreForm((f) => ({ ...f, firma_obtenida: e.target.checked }))}
+                className="w-4 h-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+              />
+              <span className="text-sm text-gray-700 dark:text-slate-300">
+                Firma del cliente obtenida
+              </span>
+            </label>
+
+            <div className="flex justify-end gap-2 pt-3 border-t dark:border-slate-700">
+              <button
+                type="button"
+                onClick={() => setCierreOt(null)}
+                className="px-4 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-300"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={cierreLoading}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-60"
+              >
+                <FontAwesomeIcon icon={faCheckCircle} />
+                {cierreLoading ? "Guardando…" : "Cerrar OT"}
               </button>
             </div>
           </form>

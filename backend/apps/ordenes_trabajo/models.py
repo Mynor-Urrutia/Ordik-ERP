@@ -25,6 +25,14 @@ class OrdenTrabajo(models.Model):
         related_name="ordenes",
     )
 
+    # ── Campos de cierre formal ──────────────────────────────────────────────
+    observaciones_cierre = models.TextField(blank=True)
+    horas_trabajadas = models.DecimalField(
+        max_digits=6, decimal_places=2, null=True, blank=True
+    )
+    nombre_receptor = models.CharField(max_length=150, blank=True)
+    firma_obtenida = models.BooleanField(default=False)
+
     class Meta:
         ordering = ["-fecha_creacion"]
         verbose_name = "Orden de Trabajo"
