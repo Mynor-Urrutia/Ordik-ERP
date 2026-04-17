@@ -1,4 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { ordenesTrabajoService } from "../../services/api/ordenesTrabajo";
 import { cotizacionesService } from "../../services/api/cotizaciones";
 import { clientesService } from "../../services/api/clientes";
@@ -169,23 +171,24 @@ export default function OrdenesTrabajoPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-5">
-        <h1 className="text-xl font-bold text-gray-800">Órdenes de Trabajo</h1>
-        <button onClick={() => setOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
-          + Nueva OT
+        <h1 className="text-xl font-bold text-gray-800 dark:text-slate-100">Órdenes de Trabajo</h1>
+        <button onClick={() => setOpen(true)} className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+          <FontAwesomeIcon icon={faPlus} />
+          Nueva OT
         </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
         <div className="px-4 pt-3 pb-2 flex items-center gap-3">
           <input
             type="text"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar por cliente, técnico, tipo…"
-            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-1/4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 rounded-lg px-3 py-1.5 text-sm w-1/4 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           {busqueda && (
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-gray-400 dark:text-slate-500">
               {itemsFiltrados.length} resultado{itemsFiltrados.length !== 1 ? "s" : ""}
             </span>
           )}
@@ -290,9 +293,9 @@ export default function OrdenesTrabajoPage() {
               </select>
             </div>
 
-            <div className="col-span-2 flex justify-end gap-2 pt-2 border-t">
-              <button type="button" onClick={close} className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50">Cancelar</button>
-              <button type="submit" className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            <div className="col-span-2 flex justify-end gap-2 pt-2 border-t dark:border-slate-700">
+              <button type="button" onClick={close} className="px-4 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-300">Cancelar</button>
+              <button type="submit" className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                 {editing ? "Actualizar" : "Crear"}
               </button>
             </div>

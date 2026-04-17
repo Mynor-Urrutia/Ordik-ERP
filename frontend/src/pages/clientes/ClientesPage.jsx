@@ -1,4 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlus, faAddressCard } from "@fortawesome/free-solid-svg-icons";
 import { clientesService } from "../../services/api/clientes";
 import { ordenesTrabajoService } from "../../services/api/ordenesTrabajo";
 import { cotizacionesService } from "../../services/api/cotizaciones";
@@ -50,44 +52,105 @@ const badge = (map, key) =>
 
 // ── Formulario ────────────────────────────────────────────────────────────────
 const EMPTY = {
-  razon_social: "", nit: "", email: "", telefono: "",
-  direccion_comercial: "", nombre_comercial: "",
+  razon_social: "", nit: "", nombre_comercial: "", tipo_cliente: "privado",
+  sector: "", sitio_web: "",
+  direccion_comercial: "", municipio: "", departamento: "", pais: "Guatemala",
+  telefono: "", telefono_secundario: "", email: "",
   nombre_contacto: "", telefono_contacto: "", email_contacto: "",
-  tipo_cliente: "privado",
+  limite_credito: "0", dias_credito: "0",
+  notas: "",
 };
 
+const DEPARTAMENTOS_GT = [
+  "Alta Verapaz","Baja Verapaz","Chimaltenango","Chiquimula","El Progreso",
+  "Escuintla","Guatemala","Huehuetenango","Izabal","Jalapa","Jutiapa","Petén",
+  "Quetzaltenango","Quiché","Retalhuleu","Sacatepéquez","San Marcos","Santa Rosa",
+  "Sololá","Suchitepéquez","Totonicapán","Zacapa",
+];
+
+const SECTORES = [
+  "Agropecuario", "Comercio al por mayor", "Comercio al por menor",
+  "Construcción", "Educación", "Energía", "Financiero / Bancario",
+  "Gobierno / Sector público", "Manufactura / Industria", "ONG / Sin fines de lucro",
+  "Salud", "Servicios profesionales", "Tecnología",
+  "Telecomunicaciones", "Transporte y logística", "Turismo y hostelería",
+];
+
 const COLS = [
-  { key: "razon_social",   label: "Razón Social",    sortable: true },
-  { key: "nit",            label: "NIT",             sortable: true },
-  { key: "nombre_comercial", label: "Nombre Comercial", sortable: true },
-  { key: "email",          label: "Email" },
-  { key: "telefono",       label: "Teléfono" },
+  { key: "razon_social",    label: "Razón Social",    sortable: true },
+  { key: "nit",             label: "NIT",             sortable: true },
+  { key: "nombre_comercial",label: "Nombre Comercial",sortable: true },
+  { key: "telefono",        label: "Teléfono" },
+  {
+    key: "sector",
+    label: "Sector",
+    render: (r) => r.sector
+      ? <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">{r.sector}</span>
+      : <span className="text-gray-300 text-xs">—</span>,
+  },
   {
     key: "tipo_cliente",
     label: "Tipo",
-    render: (r) => (
-      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-        r.tipo_cliente === "publico"
-          ? "bg-blue-100 text-blue-700"
-          : "bg-gray-100 text-gray-700"
-      }`}>
-        {r.tipo_cliente === "publico" ? "Público" : "Privado"}
-      </span>
-    ),
+    render: (r) => r.tipo_cliente
+      ? <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+          r.tipo_cliente === "publico" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-700"
+        }`}>
+          {r.tipo_cliente === "publico" ? "Público" : "Privado"}
+        </span>
+      : <span className="text-gray-300 text-xs">—</span>,
   },
 ];
 
-function Input({ label, name, form, setForm, type = "text", required = true }) {
+// ── Helpers de formulario ─────────────────────────────────────────────────────
+function CField({ label, children, span = 1 }) {
+  const cls = span === 2 ? "col-span-2" : span === 3 ? "col-span-3" : "";
   return (
-    <div>
-      <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
+    <div className={cls}>
+      <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function CInp({ label, name, form, setForm, type = "text", placeholder = "", span, required = false }) {
+  return (
+    <CField label={label} span={span}>
       <input
         type={type}
-        value={form[name]}
+        value={form[name] ?? ""}
         onChange={(e) => setForm({ ...form, [name]: e.target.value })}
+        placeholder={placeholder}
         required={required}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
+    </CField>
+  );
+}
+
+function CSel({ label, name, form, setForm, options, placeholder = "— Seleccionar —", span }) {
+  return (
+    <CField label={label} span={span}>
+      <select
+        value={form[name] ?? ""}
+        onChange={(e) => setForm({ ...form, [name]: e.target.value })}
+        className="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <option value="">{placeholder}</option>
+        {options.map((o) => (
+          <option key={typeof o === "string" ? o : o.value} value={typeof o === "string" ? o : o.value}>
+            {typeof o === "string" ? o : o.label}
+          </option>
+        ))}
+      </select>
+    </CField>
+  );
+}
+
+function CSection({ title, children }) {
+  return (
+    <div className="bg-gray-50 dark:bg-slate-700/50 rounded-xl border border-gray-200 dark:border-slate-600 p-5">
+      <h3 className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-4">{title}</h3>
+      <div className="grid grid-cols-3 gap-4">{children}</div>
     </div>
   );
 }
@@ -220,7 +283,7 @@ export default function ClientesPage() {
     }
   };
 
-  const handleEdit   = (item) => { setEditing(item); setForm(item); setOpen(true); };
+  const handleEdit = (item) => { setEditing(item); setForm({ ...EMPTY, ...item }); setOpen(true); };
   const handleDelete = async (id) => {
     if (!confirm("¿Eliminar este cliente?")) return;
     await clientesService.remove(id);
@@ -233,27 +296,28 @@ export default function ClientesPage() {
     <div>
       {/* Header */}
       <div className="flex justify-between items-center mb-5">
-        <h1 className="text-xl font-bold text-gray-800">Clientes</h1>
+        <h1 className="text-xl font-bold text-gray-800 dark:text-slate-100">Clientes</h1>
         <button
           onClick={() => setOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+          className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
         >
-          + Nuevo Cliente
+          <FontAwesomeIcon icon={faPlus} />
+          Nuevo Cliente
         </button>
       </div>
 
       {/* Tabla */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
         <div className="px-4 pt-3 pb-2 flex items-center gap-3">
           <input
             type="text"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar por razón social, NIT, email…"
-            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-1/4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 rounded-lg px-3 py-1.5 text-sm w-1/4 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           {busqueda && (
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-gray-400 dark:text-slate-500">
               {itemsFiltrados.length} resultado{itemsFiltrados.length !== 1 ? "s" : ""}
             </span>
           )}
@@ -267,8 +331,9 @@ export default function ClientesPage() {
           extra={(row) => (
             <button
               onClick={() => openPerfilModal(row)}
-              className="text-indigo-600 hover:text-indigo-800 font-medium text-sm"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors"
             >
+              <FontAwesomeIcon icon={faAddressCard} />
               Ver perfil
             </button>
           )}
@@ -277,38 +342,111 @@ export default function ClientesPage() {
 
       {/* ── Modal: CRUD ── */}
       {open && (
-        <Modal title={editing ? "Editar Cliente" : "Nuevo Cliente"} onClose={close}>
-          <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-3">
-            <Input label="Razón Social"      name="razon_social"      form={form} setForm={setForm} />
-            <Input label="NIT"               name="nit"               form={form} setForm={setForm} />
-            <Input label="Email"             name="email"             form={form} setForm={setForm} type="email" />
-            <Input label="Teléfono"          name="telefono"          form={form} setForm={setForm} />
-            <div className="col-span-2">
-              <Input label="Dirección Comercial" name="direccion_comercial" form={form} setForm={setForm} />
-            </div>
-            <Input label="Nombre Comercial"  name="nombre_comercial"  form={form} setForm={setForm} />
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Tipo de Cliente</label>
-              <select
-                value={form.tipo_cliente}
-                onChange={(e) => setForm({ ...form, tipo_cliente: e.target.value })}
+        <Modal title={editing ? "Editar Cliente" : "Nuevo Cliente"} onClose={close} wide>
+          <form onSubmit={handleSubmit} className="space-y-5">
+
+            {/* Identidad */}
+            <CSection title="Identidad Comercial">
+              <CInp label="Razón Social *" name="razon_social" form={form} setForm={setForm}
+                placeholder="Nombre legal completo" required span={2} />
+              <CInp label="NIT *" name="nit" form={form} setForm={setForm}
+                placeholder="Ej: 1234567-8" required />
+              <CInp label="Nombre Comercial" name="nombre_comercial" form={form} setForm={setForm}
+                placeholder="Marca o nombre de fantasía" span={2} />
+              <CSel label="Tipo de Cliente" name="tipo_cliente" form={form} setForm={setForm}
+                options={[{ value: "privado", label: "Privado" }, { value: "publico", label: "Público" }]}
+                placeholder="— Seleccionar —" />
+              <CSel label="Sector / Industria" name="sector" form={form} setForm={setForm}
+                options={SECTORES} span={2} />
+              <CInp label="Sitio Web" name="sitio_web" form={form} setForm={setForm}
+                type="url" placeholder="https://cliente.com" />
+            </CSection>
+
+            {/* Dirección */}
+            <CSection title="Dirección">
+              <CField label="Dirección Comercial" span={3}>
+                <textarea
+                  value={form.direccion_comercial ?? ""}
+                  onChange={(e) => setForm({ ...form, direccion_comercial: e.target.value })}
+                  rows={2}
+                  placeholder="Calle, número, zona, colonia…"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </CField>
+              <CInp label="Municipio" name="municipio" form={form} setForm={setForm} />
+              <CSel label="Departamento" name="departamento" form={form} setForm={setForm}
+                options={DEPARTAMENTOS_GT} />
+              <CInp label="País" name="pais" form={form} setForm={setForm} />
+            </CSection>
+
+            {/* Contacto corporativo */}
+            <CSection title="Contacto Corporativo">
+              <CInp label="Teléfono" name="telefono" form={form} setForm={setForm}
+                placeholder="+502 2234-5678" />
+              <CInp label="Teléfono Secundario" name="telefono_secundario" form={form} setForm={setForm}
+                placeholder="+502 5555-1234" />
+              <CInp label="Email" name="email" form={form} setForm={setForm}
+                type="email" placeholder="info@cliente.com" />
+            </CSection>
+
+            {/* Persona de contacto */}
+            <CSection title="Persona de Contacto">
+              <CInp label="Nombre" name="nombre_contacto" form={form} setForm={setForm}
+                placeholder="Nombre completo" />
+              <CInp label="Teléfono" name="telefono_contacto" form={form} setForm={setForm}
+                placeholder="+502 5555-1234" />
+              <CInp label="Email" name="email_contacto" form={form} setForm={setForm}
+                type="email" placeholder="contacto@cliente.com" />
+            </CSection>
+
+            {/* Condiciones comerciales */}
+            <CSection title="Condiciones Comerciales">
+              <CField label="Límite de Crédito (Q)">
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">Q</span>
+                  <input
+                    type="number" min="0" step="0.01"
+                    value={form.limite_credito ?? "0"}
+                    onChange={(e) => setForm({ ...form, limite_credito: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg pl-7 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </CField>
+              <CField label="Días de Crédito">
+                <div className="relative">
+                  <input
+                    type="number" min="0"
+                    value={form.dias_credito ?? "0"}
+                    onChange={(e) => setForm({ ...form, dias_credito: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-16 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">días</span>
+                </div>
+                <p className="text-xs text-gray-400 mt-1">0 = pago inmediato</p>
+              </CField>
+            </CSection>
+
+            {/* Notas */}
+            <div className="bg-gray-50 dark:bg-slate-700/50 rounded-xl border border-gray-200 dark:border-slate-600 p-5">
+              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Notas</h3>
+              <textarea
+                value={form.notas ?? ""}
+                onChange={(e) => setForm({ ...form, notas: e.target.value })}
+                rows={3}
+                placeholder="Observaciones generales sobre el cliente…"
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="privado">Privado</option>
-                <option value="publico">Público</option>
-              </select>
+              />
             </div>
-            <Input label="Nombre Contacto"     name="nombre_contacto"     form={form} setForm={setForm} />
-            <Input label="Teléfono Contacto"   name="telefono_contacto"   form={form} setForm={setForm} />
-            <div className="col-span-2">
-              <Input label="Email Contacto" name="email_contacto" form={form} setForm={setForm} type="email" />
-            </div>
-            <div className="col-span-2 flex justify-end gap-2 pt-2 border-t">
-              <button type="button" onClick={close} className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50">
+
+            {/* Acciones */}
+            <div className="flex justify-end gap-2 pt-1 border-t dark:border-slate-700">
+              <button type="button" onClick={close}
+                className="px-4 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-300">
                 Cancelar
               </button>
-              <button type="submit" className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                {editing ? "Actualizar" : "Crear"}
+              <button type="submit"
+                className="px-5 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors">
+                {editing ? "Actualizar Cliente" : "Crear Cliente"}
               </button>
             </div>
           </form>
@@ -590,7 +728,7 @@ export default function ClientesPage() {
                                   <button
                                     type="button"
                                     onClick={() => setSelectedOT(ot)}
-                                    className="text-blue-600 hover:text-blue-800 text-xs font-medium"
+                                    className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
                                   >
                                     Ver
                                   </button>

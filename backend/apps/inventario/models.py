@@ -1,6 +1,40 @@
 from decimal import Decimal
 from django.db import models
 
+UNIDAD_MEDIDA_CHOICES = [
+    ("unidad",        "Unidad"),
+    ("par",           "Par"),
+    ("juego",         "Juego / Set"),
+    ("caja",          "Caja"),
+    ("paquete",       "Paquete"),
+    ("rollo",         "Rollo"),
+    ("metro",         "Metro lineal"),
+    ("metro_cuadrado","Metro cuadrado (m²)"),
+    ("kg",            "Kilogramo"),
+    ("libra",         "Libra"),
+    ("litro",         "Litro"),
+    ("galon",         "Galón"),
+    ("pieza",         "Pieza"),
+]
+
+MOTIVO_SALIDA_CHOICES = [
+    ("uso_interno",          "Uso interno"),
+    ("prestamo",             "Préstamo"),
+    ("devolucion_proveedor", "Devolución a proveedor"),
+    ("baja_definitiva",      "Baja definitiva"),
+    ("transferencia",        "Transferencia"),
+    ("merma",                "Merma / Pérdida"),
+    ("otro",                 "Otro"),
+]
+
+CONDICION_CHOICES = [
+    ("nuevo",    "Nuevo"),
+    ("bueno",    "Bueno"),
+    ("regular",  "Regular"),
+    ("danado",   "Dañado"),
+    ("obsoleto", "Obsoleto"),
+]
+
 
 def _gen_prefix(categoria):
     """Extrae el prefijo de 5 letras a partir del nombre de categoría."""
@@ -52,6 +86,18 @@ class Producto(models.Model):
         max_digits=5, decimal_places=2, default=Decimal("0")
     )
     stock_actual = models.IntegerField(default=0)
+    stock_minimo = models.IntegerField(default=0)
+    stock_maximo = models.IntegerField(null=True, blank=True)
+    unidad_medida = models.CharField(
+        max_length=20, choices=UNIDAD_MEDIDA_CHOICES, default="unidad"
+    )
+    ubicacion = models.CharField(max_length=200, blank=True)
+    numero_serie = models.CharField(max_length=100, blank=True)
+    controla_serie = models.BooleanField(
+        default=False,
+        help_text="Si está activo, cada unidad física requiere número de serie individual.",
+    )
+    activo = models.BooleanField(default=True)
     numero_factura = models.CharField(max_length=100, blank=True)
     orden_compra = models.CharField(max_length=100, blank=True)
 
@@ -104,6 +150,21 @@ class MovimientoInventario(models.Model):
     # Campos para salidas
     vale_salida = models.CharField(max_length=100, blank=True)
     referencia_ot = models.CharField(max_length=100, blank=True)
+    motivo_salida = models.CharField(
+        max_length=30, choices=MOTIVO_SALIDA_CHOICES, blank=True
+    )
+
+    # Campos comunes
+    responsable = models.ForeignKey(
+        "maestros.Personal",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="movimientos_inventario",
+    )
+    condicion = models.CharField(
+        max_length=20, choices=CONDICION_CHOICES, blank=True
+    )
 
     class Meta:
         ordering = ["-fecha"]
@@ -137,3 +198,59 @@ class MovimientoInventario(models.Model):
             else:
                 producto.stock_actual = max(0, producto.stock_actual - self.cantidad)
                 producto.save(update_fields=["stock_actual"])
+
+
+ESTADO_UNIDAD_CHOICES = [
+    ("disponible",   "Disponible"),
+    ("en_uso",       "En Uso"),
+    ("dado_de_baja", "Dado de Baja"),
+]
+
+
+class UnidadSeriada(models.Model):
+    """
+    Representa una unidad física individual de un Producto con controla_serie=True.
+    Cada número de serie es único a nivel global.
+    """
+    producto = models.ForeignKey(
+        Producto,
+        on_delete=models.CASCADE,
+        related_name="unidades",
+    )
+    numero_serie = models.CharField(max_length=200, unique=True)
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADO_UNIDAD_CHOICES,
+        default="disponible",
+    )
+    condicion = models.CharField(
+        max_length=20,
+        choices=CONDICION_CHOICES,
+        blank=True,
+    )
+    observaciones = models.TextField(blank=True)
+    fecha_ingreso = models.DateTimeField(auto_now_add=True)
+
+    # Trazabilidad: qué movimiento creó/removió esta unidad
+    movimiento_entrada = models.ForeignKey(
+        MovimientoInventario,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="unidades_ingresadas",
+    )
+    movimiento_salida = models.ForeignKey(
+        MovimientoInventario,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="unidades_egresadas",
+    )
+
+    class Meta:
+        ordering = ["producto", "numero_serie"]
+        verbose_name = "Unidad Seriada"
+        verbose_name_plural = "Unidades Seriadas"
+
+    def __str__(self):
+        return f"{self.producto} — {self.numero_serie} [{self.get_estado_display()}]"

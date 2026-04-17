@@ -2,12 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Escala de texto dentro de modales ── */
-.modal-content .text-xs   { font-size: 0.9rem;   }
-.modal-content .text-sm   { font-size: 1.05rem;  }
-.modal-content .text-base { font-size: 1.15rem;  }
+/* ────────────────────────────────────────────────────────────────────────────
+   BASE DARK MODE — se aplica globalmente
+   ──────────────────────────────────────────────────────────────────────────── */
+html.dark body {
+  background-color: #0f172a;
+  color: #e2e8f0;
+}
 
-/* Inputs, selects y textareas dentro de modales */
+/* ── Todos los inputs/selects/textareas en dark mode (fallback global) ── */
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.dark select,
+.dark textarea {
+  background-color: #1e293b;
+  color: #e2e8f0;
+  border-color: #334155;
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b;
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   MODAL CONTENT — escala de texto y dark mode comprehensivo
+   ──────────────────────────────────────────────────────────────────────────── */
+.modal-content .text-xs   { font-size: 0.9rem;  }
+.modal-content .text-sm   { font-size: 1.05rem; }
+.modal-content .text-base { font-size: 1.15rem; }
+
 .modal-content input,
 .modal-content select,
 .modal-content textarea {
@@ -17,12 +39,64 @@
   min-height: 2.6rem;
 }
 
-/* Labels dentro de modales */
 .modal-content label {
   font-size: 0.9rem;
 }
 
-/* ── Inputs uniformes para tablas KARDEX masivo ── */
+/* ── Dark mode: textos grises dentro de .modal-content ── */
+.dark .modal-content .text-gray-900 { color: #f1f5f9 !important; }
+.dark .modal-content .text-gray-800 { color: #e2e8f0 !important; }
+.dark .modal-content .text-gray-700 { color: #cbd5e1 !important; }
+.dark .modal-content .text-gray-600 { color: #94a3b8 !important; }
+.dark .modal-content .text-gray-500 { color: #64748b  !important; }
+.dark .modal-content .text-gray-400 { color: #475569  !important; }
+
+/* ── Dark mode: bordes grises dentro de .modal-content ── */
+.dark .modal-content .border-gray-50  { border-color: #1e293b !important; }
+.dark .modal-content .border-gray-100 { border-color: #334155 !important; }
+.dark .modal-content .border-gray-200 { border-color: #475569 !important; }
+
+/* ── Dark mode: fondos dentro de .modal-content ── */
+.dark .modal-content .bg-white   { background-color: #1e293b  !important; }
+.dark .modal-content .bg-gray-50 { background-color: rgba(51,65,85,0.5) !important; }
+.dark .modal-content .bg-gray-100 { background-color: #334155 !important; }
+.dark .modal-content .bg-gray-200 { background-color: #475569 !important; }
+
+/* ── Dark mode: texto mono dentro de .modal-content ── */
+.dark .modal-content .font-mono:not([class*="text-"]) { color: #93c5fd; }
+
+/* ── Dark mode: secciones con colores de acento en .modal-content ── */
+.dark .modal-content .bg-indigo-50  { background-color: rgba(79,70,229,0.12) !important; }
+.dark .modal-content .bg-indigo-100 { background-color: rgba(79,70,229,0.22) !important; }
+.dark .modal-content .border-indigo-200 { border-color: rgba(99,102,241,0.35) !important; }
+.dark .modal-content .bg-blue-50    { background-color: rgba(59,130,246,0.12) !important; }
+.dark .modal-content .bg-blue-100   { background-color: rgba(59,130,246,0.22) !important; }
+.dark .modal-content .border-blue-200  { border-color: rgba(59,130,246,0.35) !important; }
+.dark .modal-content .bg-emerald-50 { background-color: rgba(16,185,129,0.12) !important; }
+.dark .modal-content .bg-teal-50    { background-color: rgba(20,184,166,0.12) !important; }
+.dark .modal-content .bg-amber-50   { background-color: rgba(245,158,11,0.12) !important; }
+
+/* ── Dark mode: tabla dentro de .modal-content ── */
+.dark .modal-content table thead tr { background-color: #1e293b; color: #94a3b8; }
+.dark .modal-content table tbody tr { border-color: #334155; }
+.dark .modal-content table tbody tr:hover { background-color: rgba(51,65,85,0.4); }
+.dark .modal-content table tbody td { color: #cbd5e1; }
+
+/* ── Dark mode: hover states dentro de .modal-content ── */
+.dark .modal-content .hover\:bg-gray-50:hover  { background-color: rgba(51,65,85,0.4) !important; }
+.dark .modal-content .hover\:bg-blue-50:hover  { background-color: rgba(59,130,246,0.12) !important; }
+.dark .modal-content .hover\:bg-gray-100:hover { background-color: #475569 !important; }
+
+/* ── Dark mode: dropdown absoluto ── */
+.dark .modal-content .bg-white.border.shadow-lg,
+.dark .modal-content .absolute.bg-white {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   KARDEX MASIVO
+   ──────────────────────────────────────────────────────────────────────────── */
 .bulk-inp {
   height: 2.2rem;
   border: 1px solid #e5e7eb;
@@ -33,8 +107,12 @@
   outline: none;
   box-sizing: border-box;
 }
-
 .bulk-inp:focus {
   border-color: #2dd4bf;
   box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.2);
+}
+.dark .bulk-inp {
+  background: #1e293b;
+  border-color: #334155;
+  color: #e2e8f0;
 }

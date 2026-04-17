@@ -1,4 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import Modal from "../../components/ui/Modal";
 import DataTable from "../../components/ui/DataTable";
 import {
@@ -20,13 +22,13 @@ const ActiveBadge = ({ value }) => (
 function Inp({ label, name, form, setForm, type = "text", required = true }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
+      <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">{label}</label>
       <input
         type={type}
         value={form[name] ?? ""}
         onChange={(e) => setForm({ ...form, [name]: e.target.value })}
         required={required}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
     </div>
   );
@@ -42,7 +44,7 @@ function ActivoToggle({ form, setForm }) {
         onChange={(e) => setForm({ ...form, activo: e.target.checked })}
         className="w-4 h-4 accent-blue-600"
       />
-      <label htmlFor="activo" className="text-sm text-gray-600">Activo</label>
+      <label htmlFor="activo" className="text-sm text-gray-600 dark:text-slate-400">Activo</label>
     </div>
   );
 }
@@ -97,24 +99,25 @@ function SimpleCRUD({ title, service, extraCols = [], renderForm, EMPTY }) {
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold text-gray-800">{title}</h2>
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-slate-100">{title}</h2>
         <button onClick={() => setOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium">
-          + Nuevo
+          className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">
+          <FontAwesomeIcon icon={faPlus} />
+          Nuevo
         </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
         <div className="px-4 pt-3 pb-2 flex items-center gap-3">
           <input
             type="text"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar…"
-            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-1/4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 rounded-lg px-3 py-1.5 text-sm w-1/4 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           {busqueda && (
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-gray-400 dark:text-slate-500">
               {filtrados.length} resultado{filtrados.length !== 1 ? "s" : ""}
             </span>
           )}
@@ -127,9 +130,9 @@ function SimpleCRUD({ title, service, extraCols = [], renderForm, EMPTY }) {
           <form onSubmit={handleSubmit} className="space-y-3">
             {renderForm(form, setForm)}
             <ActivoToggle form={form} setForm={setForm} />
-            <div className="flex justify-end gap-2 pt-2 border-t">
-              <button type="button" onClick={close} className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50">Cancelar</button>
-              <button type="submit" className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            <div className="flex justify-end gap-2 pt-2 border-t dark:border-slate-700">
+              <button type="button" onClick={close} className="px-4 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-300">Cancelar</button>
+              <button type="submit" className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                 {editing ? "Actualizar" : "Crear"}
               </button>
             </div>
@@ -215,7 +218,7 @@ function Modelos() {
         </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
         <div className="px-4 pt-3 pb-2 flex items-center gap-3">
           <input type="text" value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar por marca o modelo…"
@@ -231,7 +234,7 @@ function Modelos() {
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Marca *</label>
               <select value={form.marca} onChange={(e) => setForm({ ...form, marca: e.target.value })} required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                className="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="">Seleccionar…</option>
                 {marcas.filter((m) => m.activo).map((m) => (
                   <option key={m.id} value={m.id}>{m.nombre}</option>
@@ -240,9 +243,9 @@ function Modelos() {
             </div>
             <Inp label="Nombre del modelo" name="nombre" form={form} setForm={setForm} />
             <ActivoToggle form={form} setForm={setForm} />
-            <div className="flex justify-end gap-2 pt-2 border-t">
-              <button type="button" onClick={close} className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50">Cancelar</button>
-              <button type="submit" className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            <div className="flex justify-end gap-2 pt-2 border-t dark:border-slate-700">
+              <button type="button" onClick={close} className="px-4 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-300">Cancelar</button>
+              <button type="submit" className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                 {editing ? "Actualizar" : "Crear"}
               </button>
             </div>
@@ -274,7 +277,7 @@ function TiposEstatus() {
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Módulo</label>
             <select value={form.modulo} onChange={(e) => setForm({ ...form, modulo: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              className="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
               {MODULOS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
             </select>
           </div>
@@ -297,7 +300,7 @@ function TiposServicio() {
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Descripción</label>
             <textarea value={form.descripcion ?? ""} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} rows={2}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              className="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
         </>
       )}
@@ -355,7 +358,7 @@ const EMPRESA_EMPTY = {
 function EmpresaField({ label, children, span = 1 }) {
   return (
     <div className={span === 2 ? "col-span-2" : span === 3 ? "col-span-3" : ""}>
-      <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
+      <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">{label}</label>
       {children}
     </div>
   );
@@ -369,7 +372,7 @@ function EmpresaInp({ label, name, form, setForm, type = "text", span, placehold
         value={form[name] ?? ""}
         onChange={(e) => setForm({ ...form, [name]: e.target.value })}
         placeholder={placeholder}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
     </EmpresaField>
   );
@@ -415,8 +418,8 @@ function EmpresaSection() {
     <form onSubmit={handleSubmit} className="space-y-6">
 
       {/* ── Identidad ── */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm p-5">
+        <h3 className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-4">
           Identidad Legal
         </h3>
         <div className="grid grid-cols-3 gap-4">
@@ -427,7 +430,7 @@ function EmpresaSection() {
             <select
               value={form.tipo_sociedad ?? ""}
               onChange={(e) => setForm({ ...form, tipo_sociedad: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">— Seleccionar —</option>
               <option value="Sociedad Anónima (S.A.)">Sociedad Anónima (S.A.)</option>
@@ -445,8 +448,8 @@ function EmpresaSection() {
       </div>
 
       {/* ── Dirección ── */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm p-5">
+        <h3 className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-4">
           Dirección Fiscal
         </h3>
         <div className="grid grid-cols-3 gap-4">
@@ -456,7 +459,7 @@ function EmpresaSection() {
               onChange={(e) => setForm({ ...form, direccion: e.target.value })}
               rows={2}
               placeholder="Calle, número, zona, colonia…"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </EmpresaField>
           {inp("Municipio", "municipio")}
@@ -464,7 +467,7 @@ function EmpresaSection() {
             <select
               value={form.departamento ?? ""}
               onChange={(e) => setForm({ ...form, departamento: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">— Seleccionar —</option>
               {DEPARTAMENTOS_GT.map((d) => (
@@ -477,8 +480,8 @@ function EmpresaSection() {
       </div>
 
       {/* ── Contacto ── */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm p-5">
+        <h3 className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-4">
           Contacto
         </h3>
         <div className="grid grid-cols-3 gap-4">
@@ -492,8 +495,8 @@ function EmpresaSection() {
       </div>
 
       {/* ── Fiscal / Legal ── */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm p-5">
+        <h3 className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-4">
           Información Fiscal y Legal
         </h3>
         <div className="grid grid-cols-3 gap-4">
@@ -501,7 +504,7 @@ function EmpresaSection() {
             <select
               value={form.regimen_fiscal ?? ""}
               onChange={(e) => setForm({ ...form, regimen_fiscal: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">— Seleccionar régimen —</option>
               {REGIMENES.map((r) => (
@@ -518,7 +521,7 @@ function EmpresaSection() {
               onChange={(e) => setForm({ ...form, giro_comercial: e.target.value })}
               rows={2}
               placeholder="Descripción de las actividades comerciales principales…"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </EmpresaField>
         </div>
@@ -568,7 +571,7 @@ const SECCIONES = [
             <input
               type="number" min="0" value={form.dias_plazo ?? 0}
               onChange={(e) => setForm({ ...form, dias_plazo: parseInt(e.target.value) || 0 })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <p className="text-xs text-gray-400 mt-1">Ingresá 0 para indicar pago inmediato.</p>
           </div>
@@ -630,7 +633,7 @@ const SECCIONES = [
               value={form.descripcion ?? ""}
               onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
               rows={2}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </>
@@ -647,19 +650,19 @@ export default function MaestrosPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-800 mb-4">Datos Maestros</h1>
+      <h1 className="text-xl font-bold text-gray-800 dark:text-slate-100 mb-4">Datos Maestros</h1>
 
       {/* Nav tabs */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-5 overflow-x-auto">
-        <nav className="flex border-b border-gray-200 min-w-max">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 mb-5 overflow-x-auto">
+        <nav className="flex border-b border-gray-200 dark:border-slate-700 min-w-max">
           {SECCIONES.map((s) => (
             <button
               key={s.id}
               onClick={() => setActiva(s.id)}
               className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px ${
                 activa === s.id
-                  ? "border-blue-600 text-blue-700 bg-blue-50/50"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  ? "border-blue-600 text-blue-700 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/20"
+                  : "border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:border-gray-300 dark:hover:border-slate-500"
               }`}
             >
               <span className="text-sm leading-none">{s.icon}</span>

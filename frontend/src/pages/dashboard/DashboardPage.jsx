@@ -45,12 +45,12 @@ function ProgressBar({ label, value, total, color = "bg-blue-500" }) {
   const pct = total > 0 ? Math.round((value / total) * 100) : 0;
   return (
     <div className="flex items-center gap-3">
-      <span className="text-sm text-gray-600 w-28 shrink-0 truncate">{label}</span>
-      <div className="flex-1 bg-gray-100 rounded-full h-2">
+      <span className="text-sm text-gray-600 dark:text-slate-400 w-28 shrink-0 truncate">{label}</span>
+      <div className="flex-1 bg-gray-100 dark:bg-slate-700 rounded-full h-2">
         <div className={`${color} h-2 rounded-full transition-all`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-sm font-semibold text-gray-700 w-8 text-right">{value}</span>
-      <span className="text-xs text-gray-400 w-10 text-right">{pct}%</span>
+      <span className="text-sm font-semibold text-gray-700 dark:text-slate-300 w-8 text-right">{value}</span>
+      <span className="text-xs text-gray-400 dark:text-slate-500 w-10 text-right">{pct}%</span>
     </div>
   );
 }
@@ -63,11 +63,11 @@ const statusBadge = (label, cls) => (
 // ── Widget card blanca ────────────────────────────────────────────────────────
 function Card({ title, linkTo, linkLabel, children }) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-        <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
+    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-700">
+        <h3 className="text-sm font-semibold text-gray-800 dark:text-slate-200">{title}</h3>
         {linkTo && (
-          <Link to={linkTo} className="text-xs text-blue-600 hover:text-blue-800 font-medium">
+          <Link to={linkTo} className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 font-medium">
             {linkLabel ?? "Ver todo"} →
           </Link>
         )}
@@ -83,9 +83,9 @@ function MiniTable({ headers, rows, empty }) {
     <div className="overflow-x-auto -mx-5">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-gray-100">
+          <tr className="border-b border-gray-100 dark:border-slate-700">
             {headers.map((h, i) => (
-              <th key={i} className={`px-5 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wide ${h.right ? "text-right" : "text-left"}`}>
+              <th key={i} className={`px-5 py-2 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wide ${h.right ? "text-right" : "text-left"}`}>
                 {h.label}
               </th>
             ))}
@@ -96,7 +96,7 @@ function MiniTable({ headers, rows, empty }) {
             <tr><td colSpan={headers.length} className="px-5 py-8 text-center text-sm text-gray-400">{empty}</td></tr>
           )}
           {rows.map((row, i) => (
-            <tr key={i} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
+            <tr key={i} className="border-b border-gray-50 dark:border-slate-700 hover:bg-gray-50/60 dark:hover:bg-slate-700/50 transition-colors">
               {row.map((cell, j) => (
                 <td key={j} className={`px-5 py-3 ${headers[j]?.right ? "text-right" : ""}`}>{cell}</td>
               ))}
@@ -253,7 +253,7 @@ export default function DashboardPage() {
             <ProgressBar label="En curso"   value={otEnCurso}    total={ots.length} color="bg-blue-500"  />
             <ProgressBar label="Finalizadas"value={otFinalizada} total={ots.length} color="bg-emerald-500" />
           </div>
-          <div className="mt-5 pt-4 border-t border-gray-100 flex justify-around text-center">
+          <div className="mt-5 pt-4 border-t border-gray-100 dark:border-slate-700 flex justify-around text-center">
             {[
               { label: "Pendientes", val: otPendiente, cls: "text-amber-600" },
               { label: "En curso",   val: otEnCurso,   cls: "text-blue-600" },
@@ -261,7 +261,7 @@ export default function DashboardPage() {
             ].map((s) => (
               <div key={s.label}>
                 <p className={`text-2xl font-bold ${s.cls}`}>{s.val}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{s.label}</p>
+                <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">{s.label}</p>
               </div>
             ))}
           </div>
@@ -275,8 +275,8 @@ export default function DashboardPage() {
             <ProgressBar label="Aprobadas"  value={cotAprobada}  total={cots.length} color="bg-emerald-500"  />
             <ProgressBar label="Rechazadas" value={cotRechazada} total={cots.length} color="bg-rose-500"     />
           </div>
-          <div className="mt-5 pt-4 border-t border-gray-100">
-            <p className="text-xs text-gray-400 text-center">Monto aprobado</p>
+          <div className="mt-5 pt-4 border-t border-gray-100 dark:border-slate-700">
+            <p className="text-xs text-gray-400 dark:text-slate-500 text-center">Monto aprobado</p>
             <p className="text-xl font-bold text-emerald-600 text-center mt-0.5">{fmt(cotMontoAprobado)}</p>
           </div>
         </Card>
@@ -285,28 +285,28 @@ export default function DashboardPage() {
         <Card title="Órdenes de Compra" linkTo="/compras">
           <div className="space-y-5">
             <div className="flex items-center gap-4">
-              <div className="bg-teal-50 rounded-xl p-3">
+              <div className="bg-teal-500 dark:bg-teal-600 rounded-xl p-3">
                 {icons.compra}
               </div>
               <div>
-                <p className="text-xs text-gray-400">Total invertido</p>
-                <p className="text-xl font-bold text-gray-800">{fmt(comprasTotal)}</p>
+                <p className="text-xs text-gray-400 dark:text-slate-500">Total invertido</p>
+                <p className="text-xl font-bold text-gray-800 dark:text-slate-200">{fmt(comprasTotal)}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-gray-50 rounded-xl p-3 text-center">
-                <p className="text-2xl font-bold text-gray-800">{compras.length}</p>
-                <p className="text-xs text-gray-400 mt-0.5">OC registradas</p>
+              <div className="bg-gray-50 dark:bg-slate-700/50 rounded-xl p-3 text-center">
+                <p className="text-2xl font-bold text-gray-800 dark:text-slate-200">{compras.length}</p>
+                <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">OC registradas</p>
               </div>
-              <div className="bg-emerald-50 rounded-xl p-3 text-center">
+              <div className="bg-emerald-50 dark:bg-emerald-900/30 rounded-xl p-3 text-center">
                 <p className="text-2xl font-bold text-emerald-700">{stockBajo === 0 ? "✓" : stockBajo}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{stockBajo === 0 ? "Stock OK" : "Stock bajo"}</p>
+                <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">{stockBajo === 0 ? "Stock OK" : "Stock bajo"}</p>
               </div>
             </div>
 
-            <div className="bg-blue-50 rounded-xl px-4 py-3 flex items-center justify-between">
-              <span className="text-xs text-blue-600 font-medium">Proveedores activos</span>
+            <div className="bg-blue-50 dark:bg-blue-900/30 rounded-xl px-4 py-3 flex items-center justify-between">
+              <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">Proveedores activos</span>
               <Link to="/proveedores" className="text-xs text-blue-600 hover:underline font-semibold">Ver →</Link>
             </div>
           </div>
@@ -324,8 +324,8 @@ export default function DashboardPage() {
               { label: "N°" }, { label: "Cliente" }, { label: "Estado" },
             ]}
             rows={recentOts.map((o) => [
-              <span className="font-mono text-xs text-gray-500">OT-{String(o.id).padStart(4,"0")}</span>,
-              <span className="text-sm font-medium text-gray-800">{o.cliente_nombre ?? "—"}</span>,
+              <span className="font-mono text-xs text-gray-500 dark:text-slate-400">OT-{String(o.id).padStart(4,"0")}</span>,
+              <span className="text-sm font-medium text-gray-800 dark:text-slate-200">{o.cliente_nombre ?? "—"}</span>,
               o.fecha_finalizado
                 ? statusBadge("Finalizado", "bg-emerald-100 text-emerald-700")
                 : o.fecha_inicio
@@ -343,15 +343,15 @@ export default function DashboardPage() {
               { label: "N°" }, { label: "Cliente" }, { label: "Estatus" }, { label: "Total", right: true },
             ]}
             rows={recentCots.map((c) => [
-              <span className="font-mono text-xs text-gray-500">COT-{String(c.id).padStart(4,"0")}</span>,
-              <span className="text-sm font-medium text-gray-800 max-w-[120px] truncate block">{c.cliente_nombre}</span>,
+              <span className="font-mono text-xs text-gray-500 dark:text-slate-400">COT-{String(c.id).padStart(4,"0")}</span>,
+              <span className="text-sm font-medium text-gray-800 dark:text-slate-200 max-w-[120px] truncate block">{c.cliente_nombre}</span>,
               {
                 borrador:  statusBadge("Borrador",  "bg-gray-100 text-gray-600"),
                 enviada:   statusBadge("Enviada",   "bg-blue-100 text-blue-700"),
                 aprobada:  statusBadge("Aprobada",  "bg-emerald-100 text-emerald-700"),
                 rechazada: statusBadge("Rechazada", "bg-rose-100 text-rose-700"),
               }[c.estatus] ?? statusBadge(c.estatus, "bg-gray-100 text-gray-600"),
-              <span className="text-sm font-semibold text-gray-800">{fmt(c.total)}</span>,
+              <span className="text-sm font-semibold text-gray-800 dark:text-slate-200">{fmt(c.total)}</span>,
             ])}
           />
         </Card>

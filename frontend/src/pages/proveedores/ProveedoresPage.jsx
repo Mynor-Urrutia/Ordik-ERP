@@ -1,4 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlus, faAddressCard } from "@fortawesome/free-solid-svg-icons";
 import { proveedoresService } from "../../services/api/proveedores";
 import { comprasService } from "../../services/api/compras";
 import { tiposPagoService } from "../../services/api/maestros";
@@ -76,7 +78,7 @@ function PField({ label, children, span = 1 }) {
   const cls = span === 2 ? "col-span-2" : span === 3 ? "col-span-3" : "";
   return (
     <div className={cls}>
-      <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
+      <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">{label}</label>
       {children}
     </div>
   );
@@ -91,7 +93,7 @@ function PInp({ label, name, form, setForm, type = "text", placeholder = "", spa
         onChange={(e) => setForm({ ...form, [name]: e.target.value })}
         placeholder={placeholder}
         required={required}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        className="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
       />
     </PField>
   );
@@ -103,7 +105,7 @@ function PSel({ label, name, form, setForm, options, placeholder = "— Seleccio
       <select
         value={form[name] ?? ""}
         onChange={(e) => setForm({ ...form, [name]: e.target.value })}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        className="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
       >
         <option value="">{placeholder}</option>
         {options.map((o) => (
@@ -119,8 +121,8 @@ function PSel({ label, name, form, setForm, options, placeholder = "— Seleccio
 // ── Sección del formulario ────────────────────────────────────────────────────
 function FormSection({ title, children }) {
   return (
-    <div className="bg-gray-50 rounded-xl border border-gray-200 p-5">
-      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">{title}</h3>
+    <div className="bg-gray-50 dark:bg-slate-700/50 rounded-xl border border-gray-200 dark:border-slate-600 p-5">
+      <h3 className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-4">{title}</h3>
       <div className="grid grid-cols-3 gap-4">{children}</div>
     </div>
   );
@@ -299,27 +301,28 @@ export default function ProveedoresPage() {
     <div>
       {/* Header */}
       <div className="flex justify-between items-center mb-5">
-        <h1 className="text-xl font-bold text-gray-800">Proveedores</h1>
+        <h1 className="text-xl font-bold text-gray-800 dark:text-slate-100">Proveedores</h1>
         <button
           onClick={() => setOpen(true)}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+          className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
         >
-          + Nuevo Proveedor
+          <FontAwesomeIcon icon={faPlus} />
+          Nuevo Proveedor
         </button>
       </div>
 
       {/* Tabla */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
         <div className="px-4 pt-3 pb-2 flex items-center gap-3">
           <input
             type="text"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar por razón social, NIT, email…"
-            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-1/4 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 rounded-lg px-3 py-1.5 text-sm w-1/4 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
           {busqueda && (
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-gray-400 dark:text-slate-500">
               {itemsFiltrados.length} resultado{itemsFiltrados.length !== 1 ? "s" : ""}
             </span>
           )}
@@ -333,8 +336,9 @@ export default function ProveedoresPage() {
           extra={(row) => (
             <button
               onClick={() => openPerfilModal(row)}
-              className="text-emerald-600 hover:text-emerald-800 font-medium text-sm"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors"
             >
+              <FontAwesomeIcon icon={faAddressCard} />
               Ver perfil
             </button>
           )}
@@ -422,25 +426,25 @@ export default function ProveedoresPage() {
             </FormSection>
 
             {/* Notas */}
-            <div className="bg-gray-50 rounded-xl border border-gray-200 p-5">
+            <div className="bg-gray-50 dark:bg-slate-700/50 rounded-xl border border-gray-200 dark:border-slate-600 p-5">
               <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Notas</h3>
               <textarea
                 value={form.notas ?? ""}
                 onChange={(e) => setForm({ ...form, notas: e.target.value })}
                 rows={3}
                 placeholder="Observaciones generales sobre el proveedor…"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
 
             {/* Acciones */}
-            <div className="flex justify-end gap-2 pt-1 border-t">
+            <div className="flex justify-end gap-2 pt-1 border-t dark:border-slate-700">
               <button type="button" onClick={close}
-                className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-600">
+                className="px-4 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-300">
                 Cancelar
               </button>
               <button type="submit"
-                className="px-5 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium">
+                className="px-5 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium transition-colors">
                 {editing ? "Actualizar Proveedor" : "Crear Proveedor"}
               </button>
             </div>
@@ -510,6 +514,30 @@ export default function ProveedoresPage() {
                 </div>
               </div>
             </div>
+
+            {/* ── Información Financiera y Bancaria ── */}
+            {(perfil.banco || perfil.numero_cuenta || perfil.tipo_pago) && (
+              <div>
+                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+                  Información Financiera y Bancaria
+                </h3>
+                <div className="grid grid-cols-4 gap-3">
+                  {[
+                    { label: "Condición de pago",  value: perfil.tipo_pago,      accent: "bg-emerald-50 border-emerald-200 text-emerald-800" },
+                    { label: "Banco",               value: perfil.banco,          accent: "bg-blue-50 border-blue-200 text-blue-800" },
+                    { label: "N° de Cuenta",        value: perfil.numero_cuenta,  accent: "bg-slate-50 border-slate-200 text-slate-800", mono: true },
+                    { label: "Tipo de Cuenta",      value: perfil.tipo_cuenta,    accent: "bg-purple-50 border-purple-200 text-purple-800" },
+                  ].map(({ label, value, accent, mono }) =>
+                    value ? (
+                      <div key={label} className={`border rounded-lg px-4 py-3 ${accent}`}>
+                        <p className="text-[10px] font-semibold uppercase tracking-wide opacity-60 mb-1">{label}</p>
+                        <p className={`text-sm font-bold leading-tight ${mono ? "font-mono" : ""}`}>{value}</p>
+                      </div>
+                    ) : null
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* ── KPIs y métricas ── */}
             {perfilLoading ? (
@@ -700,7 +728,7 @@ export default function ProveedoresPage() {
                                   <button
                                     type="button"
                                     onClick={() => setSelectedCompra(c)}
-                                    className="text-emerald-600 hover:text-emerald-800 text-xs font-medium"
+                                    className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors"
                                   >
                                     Ver
                                   </button>

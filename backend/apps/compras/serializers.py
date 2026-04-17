@@ -25,7 +25,15 @@ class CompraHistorialSerializer(serializers.ModelSerializer):
 class CompraSerializer(serializers.ModelSerializer):
     items = CompraItemSerializer(many=True)
     tipo_pago_nombre = serializers.CharField(source="tipo_pago.nombre", read_only=True)
-    proveedor_nombre = serializers.CharField(source="proveedor.razon_social", read_only=True)
+    proveedor_nombre          = serializers.CharField(source="proveedor.razon_social",  read_only=True)
+    proveedor_nit             = serializers.CharField(source="proveedor.nit",            read_only=True)
+    proveedor_email           = serializers.CharField(source="proveedor.email",          read_only=True)
+    proveedor_telefono        = serializers.CharField(source="proveedor.telefono",       read_only=True)
+    proveedor_nombre_contacto = serializers.CharField(source="proveedor.nombre_contacto", read_only=True)
+    proveedor_banco           = serializers.CharField(source="proveedor.banco",          read_only=True)
+    proveedor_numero_cuenta   = serializers.CharField(source="proveedor.numero_cuenta",  read_only=True)
+    proveedor_tipo_cuenta     = serializers.CharField(source="proveedor.tipo_cuenta",    read_only=True)
+    proveedor_tipo_pago       = serializers.CharField(source="proveedor.tipo_pago",      read_only=True)
     historial = CompraHistorialSerializer(many=True, read_only=True)
 
     class Meta:
@@ -35,6 +43,14 @@ class CompraSerializer(serializers.ModelSerializer):
             "correlativo",
             "proveedor",
             "proveedor_nombre",
+            "proveedor_nit",
+            "proveedor_email",
+            "proveedor_telefono",
+            "proveedor_nombre_contacto",
+            "proveedor_banco",
+            "proveedor_numero_cuenta",
+            "proveedor_tipo_cuenta",
+            "proveedor_tipo_pago",
             "fecha_despacho",
             "tipo_pago",
             "tipo_pago_nombre",

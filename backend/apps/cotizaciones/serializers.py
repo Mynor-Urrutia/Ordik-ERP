@@ -3,27 +3,32 @@ from .models import Cotizacion, CotizacionItem
 
 
 class CotizacionItemSerializer(serializers.ModelSerializer):
-    subtotal_unitario = serializers.ReadOnlyField()
-    total = serializers.ReadOnlyField()
+    subtotal_unitario    = serializers.ReadOnlyField()
+    total                = serializers.ReadOnlyField()
+    unidad_medida_display = serializers.CharField(source="get_unidad_medida_display", read_only=True)
 
     class Meta:
-        model = CotizacionItem
+        model  = CotizacionItem
         fields = [
-            "id", "nombre_producto", "precio_unitario",
-            "porcentaje_iva", "porcentaje_isr", "cantidad",
-            "subtotal_unitario", "total",
+            "id", "nombre_producto", "descripcion",
+            "unidad_medida", "unidad_medida_display",
+            "precio_unitario", "porcentaje_iva", "porcentaje_isr",
+            "cantidad", "subtotal_unitario", "total",
         ]
 
 
 class CotizacionSerializer(serializers.ModelSerializer):
-    items = CotizacionItemSerializer(many=True)
-    total = serializers.ReadOnlyField()
+    items          = CotizacionItemSerializer(many=True)
+    total          = serializers.ReadOnlyField()
     cliente_nombre = serializers.CharField(source="cliente.razon_social", read_only=True)
 
     class Meta:
-        model = Cotizacion
+        model  = Cotizacion
         fields = [
-            "id", "cliente", "cliente_nombre", "tipo", "estatus", "asesor",
+            "id", "cliente", "cliente_nombre",
+            "tipo", "estatus", "asesor",
+            "validez_dias", "condiciones_pago", "tiempo_entrega",
+            "lugar_entrega", "ot_referencia", "notas",
             "fecha_creacion", "items", "total",
         ]
 

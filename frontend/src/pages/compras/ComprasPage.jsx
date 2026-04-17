@@ -1,5 +1,7 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlus, faFilePdf } from "@fortawesome/free-solid-svg-icons";
 import { comprasService } from "../../services/api/compras";
 import { proveedoresService } from "../../services/api/proveedores";
 import { inventarioService } from "../../services/api/inventario";
@@ -78,10 +80,10 @@ function AutocompleteSearch({
   return (
     <div className="w-full">
       {seleccionado ? (
-        <div className="flex items-center gap-1.5 border border-blue-400 bg-blue-50 rounded-lg px-3 py-2 w-full min-h-[2.4rem]">
+        <div className="flex items-center gap-1.5 border border-blue-400 bg-blue-50 dark:bg-blue-900/30 dark:border-blue-700 rounded-lg px-3 py-2 w-full min-h-[2.4rem]">
           {renderBadge(seleccionado)}
           <button type="button" onClick={handleClear}
-            className="text-gray-400 hover:text-red-500 font-bold shrink-0 text-xs ml-auto">✕</button>
+            className="text-gray-400 dark:text-slate-500 hover:text-red-500 font-bold shrink-0 text-xs ml-auto">✕</button>
         </div>
       ) : (
         <>
@@ -98,13 +100,13 @@ function AutocompleteSearch({
           {open && createPortal(
             <div
               style={{ position: "fixed", top: pos.top, left: pos.left, width: pos.width, zIndex: 9999 }}
-              className="bg-white border border-gray-200 rounded-lg shadow-2xl max-h-60 overflow-y-auto"
+              className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-2xl max-h-60 overflow-y-auto"
             >
               {filtrados.length === 0
-                ? <p className="px-3 py-2 text-xs text-gray-400 italic">Sin resultados</p>
+                ? <p className="px-3 py-2 text-xs text-gray-400 dark:text-slate-500 italic">Sin resultados</p>
                 : filtrados.map((it) => (
                   <button key={it.id} type="button" onMouseDown={() => handleSelect(it)}
-                    className="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2 border-b border-gray-50 last:border-0">
+                    className="w-full text-left px-3 py-2 hover:bg-blue-50 dark:hover:bg-slate-700 flex items-center gap-2 border-b border-gray-50 dark:border-slate-700 last:border-0">
                     {renderOption(it)}
                   </button>
                 ))
@@ -273,10 +275,10 @@ function PreviewOC({ form, formItems, proveedores, productos, tiposPago, onBack,
                 );
               })}
             </tbody>
-            <tfoot className="bg-gray-50 border-t-2 border-gray-200">
+            <tfoot className="bg-gray-50 dark:bg-slate-700/50 border-t-2 border-gray-200 dark:border-slate-600">
               <tr>
-                <td colSpan={4} className="px-4 py-3 text-right font-bold text-gray-700">TOTAL</td>
-                <td className="px-4 py-3 text-right font-bold text-blue-700 text-base">{fmt(total)}</td>
+                <td colSpan={4} className="px-4 py-3 text-right font-bold text-gray-700 dark:text-slate-300">TOTAL</td>
+                <td className="px-4 py-3 text-right font-bold text-blue-700 dark:text-blue-400 text-base">{fmt(total)}</td>
               </tr>
             </tfoot>
           </table>
@@ -284,13 +286,13 @@ function PreviewOC({ form, formItems, proveedores, productos, tiposPago, onBack,
       </div>
 
       {/* Acciones */}
-      <div className="flex justify-between items-center pt-2 border-t">
+      <div className="flex justify-between items-center pt-2 border-t dark:border-slate-700">
         <button type="button" onClick={onBack}
-          className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-600">
+          className="px-4 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-300">
           ← Volver a editar
         </button>
         <button type="button" onClick={onConfirm} disabled={saving}
-          className="px-6 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-60">
+          className="px-6 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-60 transition-colors">
           {saving ? "Guardando…" : "Confirmar y Guardar OC"}
         </button>
       </div>
@@ -342,15 +344,15 @@ function StatusDropdown({ oc, onUpdate }) {
           <div className="fixed inset-0 z-[9998]" onClick={() => setOpen(false)} />
           <div
             style={{ position: "fixed", top: pos.top, left: pos.left, zIndex: 9999 }}
-            className="bg-white border border-gray-200 rounded-xl shadow-2xl py-1.5 min-w-[150px]"
+            className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-2xl py-1.5 min-w-[150px]"
           >
             {OC_ESTATUS.map((s) => (
               <button
                 key={s}
                 type="button"
                 onMouseDown={() => handleChange(s)}
-                className={`w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 flex items-center gap-2 ${
-                  s === oc.estatus ? "font-semibold" : "text-gray-700"
+                className={`w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center gap-2 ${
+                  s === oc.estatus ? "font-semibold dark:text-slate-200" : "text-gray-700 dark:text-slate-300"
                 }`}
               >
                 <span className={`w-2 h-2 rounded-full shrink-0 ${
@@ -369,7 +371,36 @@ function StatusDropdown({ oc, onUpdate }) {
 }
 
 // ── Modal Detalle OC ──────────────────────────────────────────────────────────
-function DetalleOC({ oc, onClose, onUpdate }) {
+function DetalleOC({ oc: ocInicial, onClose, onUpdate }) {
+  const [oc, setOc]               = useState(ocInicial);
+  const [tab, setTab]             = useState("productos");
+  const [movimientos, setMovimientos] = useState([]);
+  const [loadingMov, setLoadingMov]   = useState(false);
+
+  // Cargar datos frescos de la OC (puede haber cambiado de estatus automáticamente)
+  // y los movimientos de inventario vinculados
+  useEffect(() => {
+    let alive = true;
+    const init = async () => {
+      try {
+        const [ocResp, movResp] = await Promise.all([
+          comprasService.getById(ocInicial.id),
+          ocInicial.correlativo
+            ? inventarioService.getMovimientosByOC(ocInicial.correlativo)
+            : Promise.resolve({ data: [] }),
+        ]);
+        if (!alive) return;
+        const ocFresh = ocResp.data;
+        setOc(ocFresh);
+        onUpdate(ocFresh);          // sincroniza la tabla principal
+        setMovimientos(movResp.data.results ?? movResp.data);
+      } catch (e) { console.error(e); }
+    };
+    setLoadingMov(true);
+    init().finally(() => { if (alive) setLoadingMov(false); });
+    return () => { alive = false; };
+  }, [ocInicial.id, ocInicial.correlativo]); // eslint-disable-line
+
   const total = (oc.items ?? []).reduce(
     (acc, it) => acc + (parseFloat(it.costo_unitario) || 0) * (parseInt(it.cantidad) || 0),
     0
@@ -381,11 +412,28 @@ function DetalleOC({ oc, onClose, onUpdate }) {
       })
     : "—";
 
+  // ── Comparativo solicitado vs recibido ─────────────────────────────────────
+  const comparativo = (oc.items ?? []).map((item) => {
+    const totalRecibido = movimientos
+      .filter((m) => String(m.producto) === String(item.producto))
+      .reduce((sum, m) => sum + (m.cantidad || 0), 0);
+    const estado =
+      totalRecibido === 0         ? "pendiente"
+      : totalRecibido >= item.cantidad ? "completo"
+      : "parcial";
+    return { ...item, cantidad_recibida: totalRecibido, estado };
+  });
+
+  const resumenEstado = comparativo.length === 0 ? null
+    : comparativo.every((r) => r.estado === "completo") ? "completo"
+    : comparativo.some((r) => r.estado !== "pendiente")  ? "parcial"
+    : "pendiente";
+
   return (
     <Modal title="Detalle de Orden de Compra" onClose={onClose} wide>
       <div className="space-y-5">
 
-        {/* Cabecera OC */}
+        {/* ── Cabecera OC ── */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-5 text-white">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -401,13 +449,12 @@ function DetalleOC({ oc, onClose, onUpdate }) {
                 <p className="text-blue-200 text-xs mb-0.5">Registrada</p>
                 <p className="font-medium">{fmtDateTime(oc.fecha_creacion)}</p>
               </div>
-              {/* Estatus con dropdown */}
-              <StatusDropdown oc={oc} onUpdate={onUpdate} />
+              <StatusDropdown oc={oc} onUpdate={(updated) => { setOc(updated); onUpdate(updated); }} />
             </div>
           </div>
         </div>
 
-        {/* Info general */}
+        {/* ── Info general ── */}
         <div className="grid grid-cols-4 gap-4">
           <div className="bg-gray-50 rounded-lg p-3">
             <p className="text-xs text-gray-500 font-medium mb-1">Proveedor</p>
@@ -435,6 +482,49 @@ function DetalleOC({ oc, onClose, onUpdate }) {
           </div>
         </div>
 
+        {/* ── Datos financieros del proveedor ── */}
+        {(oc.proveedor_banco || oc.proveedor_numero_cuenta || oc.proveedor_tipo_pago) && (
+          <div className="border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3">
+            <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-2.5">
+              Datos Financieros del Proveedor
+            </p>
+            <div className="grid grid-cols-4 gap-x-6 gap-y-2">
+              {oc.proveedor_tipo_pago && (
+                <div>
+                  <p className="text-[10px] text-gray-400 mb-0.5">Condición de pago</p>
+                  <span className="inline-block bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold px-2 py-0.5 rounded-full">
+                    {oc.proveedor_tipo_pago}
+                  </span>
+                </div>
+              )}
+              {oc.proveedor_banco && (
+                <div>
+                  <p className="text-[10px] text-gray-400 mb-0.5">Banco</p>
+                  <p className="text-sm font-semibold text-gray-800 dark:text-slate-200">{oc.proveedor_banco}</p>
+                </div>
+              )}
+              {oc.proveedor_numero_cuenta && (
+                <div>
+                  <p className="text-[10px] text-gray-400 mb-0.5">N° de Cuenta</p>
+                  <p className="text-sm font-mono font-semibold text-gray-800 dark:text-slate-200">{oc.proveedor_numero_cuenta}</p>
+                  {oc.proveedor_tipo_cuenta && (
+                    <p className="text-[10px] text-gray-400 mt-0.5">{oc.proveedor_tipo_cuenta}</p>
+                  )}
+                </div>
+              )}
+              {oc.proveedor_nombre_contacto && (
+                <div>
+                  <p className="text-[10px] text-gray-400 mb-0.5">Contacto</p>
+                  <p className="text-sm font-semibold text-gray-800 dark:text-slate-200">{oc.proveedor_nombre_contacto}</p>
+                  {oc.proveedor_email && (
+                    <p className="text-[10px] text-gray-400 mt-0.5">{oc.proveedor_email}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {oc.notas && (
           <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
             <p className="text-xs text-amber-600 font-medium mb-0.5">Notas</p>
@@ -442,14 +532,28 @@ function DetalleOC({ oc, onClose, onUpdate }) {
           </div>
         )}
 
-        {/* Tabla de productos */}
-        <div>
-          <p className="text-sm font-semibold text-gray-700 mb-2">
-            Productos
-            <span className="ml-2 text-xs font-normal text-gray-400">
-              ({(oc.items ?? []).length} línea{(oc.items ?? []).length !== 1 ? "s" : ""})
-            </span>
-          </p>
+        {/* ── Tabs ── */}
+        <div className="flex gap-1 bg-gray-100 dark:bg-slate-700 p-1 rounded-lg w-fit text-xs">
+          {[
+            { key: "productos",  label: "Productos solicitados" },
+            { key: "recepcion",  label: `Recepción${resumenEstado ? ` · ${resumenEstado === "completo" ? "✓ Completo" : resumenEstado === "parcial" ? "⚠ Parcial" : "Pendiente"}` : ""}` },
+            { key: "historial",  label: "Historial" },
+          ].map(({ key, label }) => (
+            <button key={key} type="button" onClick={() => setTab(key)}
+              className={`px-3 py-1.5 rounded-md font-medium transition-colors ${
+                tab === key
+                  ? key === "recepcion" && resumenEstado === "completo" ? "bg-green-600 text-white shadow-sm"
+                    : key === "recepcion" && resumenEstado === "parcial"  ? "bg-amber-500 text-white shadow-sm"
+                    : "bg-white dark:bg-slate-600 text-gray-800 dark:text-slate-100 shadow-sm"
+                  : "text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200"
+              }`}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Tab: Productos solicitados ── */}
+        {tab === "productos" && (
           <div className="border border-gray-200 rounded-xl overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-slate-700 text-white">
@@ -493,48 +597,163 @@ function DetalleOC({ oc, onClose, onUpdate }) {
               </tfoot>
             </table>
           </div>
-        </div>
+        )}
 
-        {/* ── Historial de cambios ── */}
-        <div>
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
-            Historial de cambios
-          </h3>
-          {(oc.historial ?? []).length === 0 ? (
-            <p className="text-xs text-gray-400 italic">Sin registros de cambios.</p>
-          ) : (
-            <div className="space-y-0">
-              {(oc.historial ?? []).map((h, i) => {
-                const colors = OC_HISTORIAL_COLOR[h.tipo] ?? { dot: "bg-gray-400", badge: "bg-gray-100 text-gray-600" };
-                const label  = OC_HISTORIAL_LABEL[h.tipo] ?? h.tipo;
-                const isLast = i === (oc.historial.length - 1);
-                return (
-                  <div key={h.id} className="flex gap-3">
-                    {/* Timeline line + dot */}
-                    <div className="flex flex-col items-center shrink-0">
-                      <div className={`w-2.5 h-2.5 rounded-full mt-1 shrink-0 ${colors.dot}`} />
-                      {!isLast && <div className="w-px flex-1 bg-gray-200 mt-1" />}
-                    </div>
-                    {/* Content */}
-                    <div className={`pb-4 flex-1 min-w-0 ${isLast ? "" : ""}`}>
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${colors.badge}`}>
-                          {label}
-                        </span>
-                        <span className="text-xs text-gray-400">{fmtDateTime(h.fecha)}</span>
-                      </div>
-                      <p className="text-sm text-gray-700 leading-relaxed">{h.descripcion}</p>
-                    </div>
-                  </div>
-                );
-              })}
+        {/* ── Tab: Recepción ── */}
+        {tab === "recepcion" && (
+          <div className="space-y-4">
+            {/* Comparativo */}
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">
+                Comparativo solicitado vs recibido
+              </p>
+              {loadingMov ? (
+                <p className="text-xs text-gray-400 italic py-4 text-center">Cargando…</p>
+              ) : (
+                <div className="border border-gray-200 rounded-xl overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-700 text-white">
+                      <tr>
+                        <th className="px-4 py-2.5 text-left font-medium text-xs">Producto</th>
+                        <th className="px-4 py-2.5 text-right font-medium text-xs">Solicitado</th>
+                        <th className="px-4 py-2.5 text-right font-medium text-xs">Recibido</th>
+                        <th className="px-4 py-2.5 text-right font-medium text-xs">Diferencia</th>
+                        <th className="px-4 py-2.5 text-center font-medium text-xs">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {comparativo.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="text-center py-6 text-gray-400 text-xs italic">
+                            Sin productos en esta OC
+                          </td>
+                        </tr>
+                      ) : comparativo.map((row, i) => {
+                        const diff = row.cantidad_recibida - row.cantidad;
+                        return (
+                          <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                            <td className="px-4 py-2.5">
+                              <p className="font-medium text-gray-800 text-sm">{row.producto_nombre ?? `#${row.producto}`}</p>
+                              <p className="text-xs text-gray-400 font-mono">{row.producto_cod ?? ""}</p>
+                            </td>
+                            <td className="px-4 py-2.5 text-right text-gray-700 font-semibold">{row.cantidad}</td>
+                            <td className="px-4 py-2.5 text-right font-bold text-gray-800">{row.cantidad_recibida}</td>
+                            <td className="px-4 py-2.5 text-right">
+                              <span className={`font-semibold text-sm ${
+                                diff === 0 ? "text-gray-400"
+                                : diff > 0  ? "text-green-600"
+                                : "text-red-600"
+                              }`}>
+                                {diff > 0 ? `+${diff}` : diff === 0 ? "—" : diff}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2.5 text-center">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                                row.estado === "completo"  ? "bg-green-100 text-green-700"
+                                : row.estado === "parcial" ? "bg-amber-100 text-amber-700"
+                                : "bg-gray-100 text-gray-500"
+                              }`}>
+                                {row.estado === "completo"  ? "✓ Completo"
+                                : row.estado === "parcial"  ? "⚠ Parcial"
+                                : "Pendiente"}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        <div className="flex justify-end pt-1 border-t">
+            {/* Movimientos registrados */}
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">
+                Entradas registradas en inventario ({movimientos.length})
+              </p>
+              {movimientos.length === 0 ? (
+                <div className="border border-dashed border-gray-200 rounded-xl py-8 text-center">
+                  <p className="text-sm text-gray-400">No se han registrado entradas para esta OC aún.</p>
+                  <p className="text-xs text-gray-300 mt-1">Registrá una entrada en el KARDEX seleccionando esta OC.</p>
+                </div>
+              ) : (
+                <div className="border border-gray-200 rounded-xl overflow-hidden">
+                  <table className="w-full text-xs">
+                    <thead className="bg-gray-100 text-gray-500 uppercase tracking-wide">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-medium">Producto</th>
+                        <th className="px-3 py-2 text-right font-medium">Cant.</th>
+                        <th className="px-3 py-2 text-right font-medium">Costo Unit.</th>
+                        <th className="px-3 py-2 text-left font-medium">N° Factura</th>
+                        <th className="px-3 py-2 text-left font-medium">Responsable</th>
+                        <th className="px-3 py-2 text-left font-medium">Condición</th>
+                        <th className="px-3 py-2 text-left font-medium">Fecha</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {movimientos.map((m) => (
+                        <tr key={m.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-3 py-2 font-medium text-gray-800">{m.producto_nombre}</td>
+                          <td className="px-3 py-2 text-right font-bold text-green-700">{m.cantidad}</td>
+                          <td className="px-3 py-2 text-right text-gray-600">
+                            {m.costo_unitario ? fmt(m.costo_unitario) : "—"}
+                          </td>
+                          <td className="px-3 py-2 font-mono text-gray-500">{m.numero_factura || "—"}</td>
+                          <td className="px-3 py-2 text-gray-500">{m.responsable_nombre || "—"}</td>
+                          <td className="px-3 py-2 text-gray-500">{m.condicion_display || "—"}</td>
+                          <td className="px-3 py-2 text-gray-400 whitespace-nowrap">
+                            {new Date(m.fecha).toLocaleString("es-GT", {
+                              dateStyle: "short", timeStyle: "short",
+                            })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── Tab: Historial ── */}
+        {tab === "historial" && (
+          <div>
+            {(oc.historial ?? []).length === 0 ? (
+              <p className="text-xs text-gray-400 italic">Sin registros de cambios.</p>
+            ) : (
+              <div className="space-y-0">
+                {(oc.historial ?? []).map((h, i) => {
+                  const colors = OC_HISTORIAL_COLOR[h.tipo] ?? { dot: "bg-gray-400", badge: "bg-gray-100 text-gray-600" };
+                  const label  = OC_HISTORIAL_LABEL[h.tipo] ?? h.tipo;
+                  const isLast = i === (oc.historial.length - 1);
+                  return (
+                    <div key={h.id} className="flex gap-3">
+                      <div className="flex flex-col items-center shrink-0">
+                        <div className={`w-2.5 h-2.5 rounded-full mt-1 shrink-0 ${colors.dot}`} />
+                        {!isLast && <div className="w-px flex-1 bg-gray-200 mt-1" />}
+                      </div>
+                      <div className="pb-4 flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${colors.badge}`}>
+                            {label}
+                          </span>
+                          <span className="text-xs text-gray-400">{fmtDateTime(h.fecha)}</span>
+                        </div>
+                        <p className="text-sm text-gray-700 leading-relaxed">{h.descripcion}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="flex justify-end pt-1 border-t dark:border-slate-700">
           <button onClick={onClose}
-            className="px-5 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium">
+            className="px-5 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors">
             Cerrar
           </button>
         </div>
@@ -761,6 +980,20 @@ export default function ComprasPage() {
     load();
   };
 
+  const handlePdf = async (row) => {
+    try {
+      const { data } = await comprasService.descargarPdf(row.id);
+      const url = URL.createObjectURL(new Blob([data], { type: "application/pdf" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${row.correlativo || `OC-${row.id}`}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const close = () => {
     setOpen(false); setEditing(null);
     setForm(EMPTY_FORM); setFormItems([{ ...EMPTY_ITEM }]);
@@ -775,27 +1008,28 @@ export default function ComprasPage() {
     <div>
       {/* Encabezado */}
       <div className="flex justify-between items-center mb-5">
-        <h1 className="text-xl font-bold text-gray-800">Órdenes de Compra</h1>
+        <h1 className="text-xl font-bold text-gray-800 dark:text-slate-100">Órdenes de Compra</h1>
         <button
           onClick={() => { setStep(1); setOpen(true); }}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+          className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
         >
-          + Nueva Orden de Compra
+          <FontAwesomeIcon icon={faPlus} />
+          Nueva Orden de Compra
         </button>
       </div>
 
       {/* Tabla */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
         <div className="px-4 pt-3 pb-2 flex items-center gap-3">
           <input
             type="text"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar por OC, proveedor, tipo de pago…"
-            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-80 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 rounded-lg px-3 py-1.5 text-sm w-80 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           {busqueda && (
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-gray-400 dark:text-slate-500">
               {itemsFiltrados.length} resultado{itemsFiltrados.length !== 1 ? "s" : ""}
             </span>
           )}
@@ -807,12 +1041,21 @@ export default function ComprasPage() {
           onEdit={handleEdit}
           onDelete={handleDelete}
           extra={(row) => (
-            <button
-              onClick={() => setDetalle(row)}
-              className="text-indigo-600 hover:text-indigo-800 font-medium"
-            >
-              Ver
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setDetalle(row)}
+                className="text-indigo-600 hover:text-indigo-800 font-medium text-xs"
+              >
+                Ver
+              </button>
+              <button
+                onClick={() => handlePdf(row)}
+                title="Descargar PDF"
+                className="text-red-500 hover:text-red-700 transition-colors"
+              >
+                <FontAwesomeIcon icon={faFilePdf} className="w-4 h-4" />
+              </button>
+            </div>
           )}
           sortKey={sortKey}
           sortDir={sortDir}
