@@ -1,5 +1,5 @@
 from decimal import Decimal
-from django.db import models
+from django.db import models, transaction
 
 UNIDAD_MEDIDA_CHOICES = [
     ("unidad",        "Unidad"),
@@ -88,9 +88,7 @@ class Producto(models.Model):
     stock_actual = models.IntegerField(default=0)
     stock_minimo = models.IntegerField(default=0)
     stock_maximo = models.IntegerField(null=True, blank=True)
-    unidad_medida = models.CharField(
-        max_length=20, choices=UNIDAD_MEDIDA_CHOICES, default="unidad"
-    )
+    unidad_medida = models.CharField(max_length=50, default="unidad")
     ubicacion = models.CharField(max_length=200, blank=True)
     numero_serie = models.CharField(max_length=100, blank=True)
     controla_serie = models.BooleanField(
@@ -150,9 +148,7 @@ class MovimientoInventario(models.Model):
     # Campos para salidas
     vale_salida = models.CharField(max_length=100, blank=True)
     referencia_ot = models.CharField(max_length=100, blank=True)
-    motivo_salida = models.CharField(
-        max_length=30, choices=MOTIVO_SALIDA_CHOICES, blank=True
-    )
+    motivo_salida = models.CharField(max_length=100, blank=True)
 
     # Campos comunes
     responsable = models.ForeignKey(
@@ -178,26 +174,27 @@ class MovimientoInventario(models.Model):
         is_new = self.pk is None
         super().save(*args, **kwargs)
         if is_new:
-            producto = self.producto
-            if self.tipo == "entrada":
-                # Costo Promedio Ponderado (CPP)
-                # nuevo_costo = (stock_actual × costo_actual + cantidad × costo_entrada) / (stock_actual + cantidad)
-                if self.costo_unitario is not None:
-                    stock_previo = producto.stock_actual
-                    costo_previo = producto.costo_unitario
-                    nuevo_stock = stock_previo + self.cantidad
-                    nuevo_costo = (
-                        (stock_previo * costo_previo) + (self.cantidad * self.costo_unitario)
-                    ) / nuevo_stock
-                    update_fields = ["stock_actual", "costo_unitario"]
-                    producto.costo_unitario = nuevo_costo.quantize(Decimal("0.01"))
+            with transaction.atomic():
+                # Re-fetch con lock para evitar race condition en CPP
+                producto = Producto.objects.select_for_update().get(pk=self.producto_id)
+                if self.tipo == "entrada":
+                    # Costo Promedio Ponderado (CPP)
+                    if self.costo_unitario is not None:
+                        stock_previo = producto.stock_actual
+                        costo_previo = producto.costo_unitario
+                        nuevo_stock = stock_previo + self.cantidad
+                        nuevo_costo = (
+                            (stock_previo * costo_previo) + (self.cantidad * self.costo_unitario)
+                        ) / nuevo_stock
+                        producto.costo_unitario = nuevo_costo.quantize(Decimal("0.01"))
+                        producto.stock_actual += self.cantidad
+                        producto.save(update_fields=["stock_actual", "costo_unitario"])
+                    else:
+                        producto.stock_actual += self.cantidad
+                        producto.save(update_fields=["stock_actual"])
                 else:
-                    update_fields = ["stock_actual"]
-                producto.stock_actual += self.cantidad
-                producto.save(update_fields=update_fields)
-            else:
-                producto.stock_actual = max(0, producto.stock_actual - self.cantidad)
-                producto.save(update_fields=["stock_actual"])
+                    producto.stock_actual = max(0, producto.stock_actual - self.cantidad)
+                    producto.save(update_fields=["stock_actual"])
 
 
 ESTADO_UNIDAD_CHOICES = [

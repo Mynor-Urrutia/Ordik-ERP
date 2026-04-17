@@ -5,7 +5,7 @@ import { faPlus, faTableList, faFilePdf } from "@fortawesome/free-solid-svg-icon
 import { inventarioService } from "../../services/api/inventario";
 import { proveedoresService } from "../../services/api/proveedores";
 import { comprasService } from "../../services/api/compras";
-import { marcasService, modelosService, tiposProductoService, personalService } from "../../services/api/maestros";
+import { marcasService, modelosService, tiposProductoService, personalService, unidadesMedidaService, motivosSalidaService } from "../../services/api/maestros";
 import DataTable from "../../components/ui/DataTable";
 import Modal from "../../components/ui/Modal";
 
@@ -35,31 +35,7 @@ const EMPTY_SALIDA = {
 const mkEntrada = () => ({ ...EMPTY_ENTRADA, _id: `e-${Date.now()}-${Math.random()}` });
 const mkSalida  = () => ({ ...EMPTY_SALIDA,  _id: `s-${Date.now()}-${Math.random()}` });
 
-const UNIDADES = [
-  { value: "unidad",         label: "Unidad" },
-  { value: "par",            label: "Par" },
-  { value: "juego",          label: "Juego / Set" },
-  { value: "caja",           label: "Caja" },
-  { value: "paquete",        label: "Paquete" },
-  { value: "rollo",          label: "Rollo" },
-  { value: "metro",          label: "Metro lineal" },
-  { value: "metro_cuadrado", label: "Metro cuadrado (m²)" },
-  { value: "kg",             label: "Kilogramo" },
-  { value: "libra",          label: "Libra" },
-  { value: "litro",          label: "Litro" },
-  { value: "galon",          label: "Galón" },
-  { value: "pieza",          label: "Pieza" },
-];
-
-const MOTIVOS_SALIDA = [
-  { value: "uso_interno",          label: "Uso interno" },
-  { value: "prestamo",             label: "Préstamo" },
-  { value: "devolucion_proveedor", label: "Devolución a proveedor" },
-  { value: "baja_definitiva",      label: "Baja definitiva" },
-  { value: "transferencia",        label: "Transferencia" },
-  { value: "merma",                label: "Merma / Pérdida" },
-  { value: "otro",                 label: "Otro" },
-];
+// UNIDADES y MOTIVOS_SALIDA se cargan desde maestros dinámicamente (ver loadAuxiliar)
 
 const CONDICIONES = [
   { value: "nuevo",    label: "Nuevo" },
@@ -338,6 +314,8 @@ export default function InventarioPage() {
   const [modelos, setModelos] = useState([]);
   const [tiposProducto, setTiposProducto] = useState([]);
   const [personal, setPersonal] = useState([]);
+  const [unidadesMedida, setUnidadesMedida] = useState([]);
+  const [motivosSalida, setMotivosSalida] = useState([]);
 
   // Formulario producto
   const [form, setForm] = useState(EMPTY);
@@ -457,13 +435,15 @@ export default function InventarioPage() {
 
   const loadAuxiliar = async () => {
     try {
-      const [prov, mar, mod, tp, oc, pers] = await Promise.all([
+      const [prov, mar, mod, tp, oc, pers, um, ms] = await Promise.all([
         proveedoresService.getAll(),
         marcasService.getAll({ activo: true }),
         modelosService.getAll({ activo: true }),
         tiposProductoService.getAll({ activo: true }),
         comprasService.getAll(),
         personalService.getAll({ activo: true }),
+        unidadesMedidaService.getAll({ activo: true }),
+        motivosSalidaService.getAll({ activo: true }),
       ]);
       setProveedores(prov.data.results ?? prov.data);
       setMarcas(mar.data.results ?? mar.data);
@@ -471,6 +451,8 @@ export default function InventarioPage() {
       setTiposProducto(tp.data.results ?? tp.data);
       setCompras(oc.data.results ?? oc.data);
       setPersonal(pers.data.results ?? pers.data);
+      setUnidadesMedida(um.data.results ?? um.data);
+      setMotivosSalida(ms.data.results ?? ms.data);
     } catch (e) { console.error(e); }
   };
 
@@ -1053,7 +1035,10 @@ export default function InventarioPage() {
             <div>
               <FormLabel>Unidad de Medida</FormLabel>
               <select value={form.unidad_medida} onChange={(e) => setForm({ ...form, unidad_medida: e.target.value })} className={sel}>
-                {UNIDADES.map((u) => <option key={u.value} value={u.value}>{u.label}</option>)}
+                <option value="unidad">Unidad</option>
+                {unidadesMedida.map((u) => (
+                  <option key={u.id} value={u.abreviatura || u.nombre}>{u.nombre}{u.abreviatura ? ` (${u.abreviatura})` : ""}</option>
+                ))}
               </select>
             </div>
 
@@ -1672,7 +1657,7 @@ export default function InventarioPage() {
                       onChange={(e) => setCardexSalida({ ...cardexSalida, motivo_salida: e.target.value })}
                       className={inp_cls}>
                       <option value="">— Seleccionar —</option>
-                      {MOTIVOS_SALIDA.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+                      {motivosSalida.map((m) => <option key={m.id} value={m.nombre}>{m.nombre}</option>)}
                     </select>
                   </div>
                   {/* Condición */}

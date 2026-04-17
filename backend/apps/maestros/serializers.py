@@ -1,5 +1,9 @@
 from rest_framework import serializers
-from .models import Marca, Modelo, TipoPago, TipoTrabajo, TipoEstatus, TipoServicio, Personal, TipoCliente, TipoProducto, EmpresaConfig
+from .models import (
+    Marca, Modelo, TipoPago, TipoTrabajo, TipoEstatus, TipoServicio,
+    Personal, TipoCliente, TipoProducto, EmpresaConfig,
+    CategoriaProducto, UnidadMedida, MotivoSalida,
+)
 
 
 class MarcaSerializer(serializers.ModelSerializer):
@@ -57,6 +61,24 @@ class TipoClienteSerializer(serializers.ModelSerializer):
 class TipoProductoSerializer(serializers.ModelSerializer):
     class Meta:
         model = TipoProducto
+        fields = "__all__"
+
+
+class CategoriaProductoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CategoriaProducto
+        fields = "__all__"
+
+
+class UnidadMedidaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UnidadMedida
+        fields = "__all__"
+
+
+class MotivoSalidaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MotivoSalida
         fields = "__all__"
 
 

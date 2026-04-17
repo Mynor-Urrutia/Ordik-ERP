@@ -16,7 +16,10 @@ export const tiposEstatusService = resource("tipos-estatus");
 export const tiposServicioService = resource("tipos-servicio");
 export const personalService     = resource("personal");
 export const tiposClienteService  = resource("tipos-cliente");
-export const tiposProductoService = resource("tipos-producto");
+export const tiposProductoService     = resource("tipos-producto");
+export const categoriasProductoService = resource("categorias-producto");
+export const unidadesMedidaService     = resource("unidades-medida");
+export const motivosSalidaService      = resource("motivos-salida");
 
 export const empresaService = {
   get:    ()     => client.get("/maestros/empresa/"),

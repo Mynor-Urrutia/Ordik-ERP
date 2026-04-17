@@ -7,6 +7,7 @@ import {
   marcasService, modelosService, tiposPagoService, tiposTrabajoService,
   tiposEstatusService, tiposServicioService, personalService, tiposClienteService,
   tiposProductoService, empresaService,
+  categoriasProductoService, unidadesMedidaService, motivosSalidaService,
 } from "../../services/api/maestros";
 
 // ── Badge activo ─────────────────────────────────────────────────────────────
@@ -589,6 +590,47 @@ const SECCIONES = [
   { id: "tipos-cliente",   label: "Tipos de Cliente",   icon: "🏢",  component: () => (
     <SimpleCRUD title="Tipos de Cliente" service={tiposClienteService} EMPTY={{ nombre: "", activo: true }}
       renderForm={(form, setForm) => <Inp label="Nombre" name="nombre" form={form} setForm={setForm} />} />
+  )},
+  { id: "categorias",       label: "Categorías",          icon: "📂",  component: () => (
+    <SimpleCRUD
+      title="Categorías de Producto"
+      service={categoriasProductoService}
+      EMPTY={{ nombre: "", descripcion: "", activo: true }}
+      renderForm={(form, setForm) => (
+        <>
+          <Inp label="Nombre" name="nombre" form={form} setForm={setForm} />
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Descripción</label>
+            <textarea value={form.descripcion ?? ""} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} rows={2}
+              className="w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+        </>
+      )}
+    />
+  )},
+  { id: "unidades-medida", label: "Unidades de Medida",  icon: "📐",  component: () => (
+    <SimpleCRUD
+      title="Unidades de Medida"
+      service={unidadesMedidaService}
+      EMPTY={{ nombre: "", abreviatura: "", activo: true }}
+      extraCols={[{ key: "abreviatura", label: "Abreviatura" }]}
+      renderForm={(form, setForm) => (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="col-span-2"><Inp label="Nombre" name="nombre" form={form} setForm={setForm} /></div>
+          <Inp label="Abreviatura" name="abreviatura" form={form} setForm={setForm} required={false} />
+        </div>
+      )}
+    />
+  )},
+  { id: "motivos-salida",  label: "Motivos de Salida",   icon: "📤",  component: () => (
+    <SimpleCRUD
+      title="Motivos de Salida de Inventario"
+      service={motivosSalidaService}
+      EMPTY={{ nombre: "", activo: true }}
+      renderForm={(form, setForm) => (
+        <Inp label="Nombre del motivo" name="nombre" form={form} setForm={setForm} />
+      )}
+    />
   )},
   { id: "empresa",         label: "Datos de Empresa",   icon: "🏛️",  component: EmpresaSection },
   { id: "tipos-producto",  label: "Tipos de Producto",  icon: "📦",  component: () => (

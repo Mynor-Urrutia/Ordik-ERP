@@ -32,33 +32,34 @@ class Cotizacion(models.Model):
         return sum((item.total for item in self.items.all()), Decimal("0"))
 
 
-UNIDADES_CHOICES = [
-    ("unidad",   "Unidad"),
-    ("hora",     "Hora"),
-    ("servicio", "Servicio"),
-    ("mes",      "Mes"),
-    ("metro",    "Metro lineal"),
-    ("m2",       "Metro cuadrado"),
-    ("kg",       "Kilogramo"),
-    ("litro",    "Litro"),
-    ("caja",     "Caja"),
-    ("paquete",  "Paquete"),
-    ("global",   "Global"),
-]
-
-
 class CotizacionItem(models.Model):
-    cotizacion      = models.ForeignKey(Cotizacion, on_delete=models.CASCADE, related_name="items")
-    nombre_producto = models.CharField(max_length=200)
-    descripcion     = models.TextField(blank=True, help_text="Descripción detallada del ítem")
-    unidad_medida   = models.CharField(max_length=30, choices=UNIDADES_CHOICES, default="unidad")
-    precio_unitario = models.DecimalField(max_digits=12, decimal_places=2)
-    porcentaje_iva  = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("12.00"))
-    porcentaje_isr  = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("0.00"))
-    cantidad        = models.PositiveIntegerField()
+    cotizacion           = models.ForeignKey(Cotizacion, on_delete=models.CASCADE, related_name="items")
+    nombre_producto      = models.CharField(max_length=200)
+    descripcion          = models.TextField(blank=True, help_text="Descripción detallada del ítem")
+    unidad_medida        = models.CharField(max_length=50, default="unidad")
+    precio_unitario      = models.DecimalField(max_digits=12, decimal_places=2)
+    descuento_porcentaje = models.DecimalField(
+        max_digits=5, decimal_places=2, default=Decimal("0.00"),
+        help_text="Descuento en porcentaje sobre el precio unitario"
+    )
+    descuento_monto      = models.DecimalField(
+        max_digits=12, decimal_places=2, default=Decimal("0.00"),
+        help_text="Descuento en monto fijo por unidad"
+    )
+    porcentaje_iva       = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("12.00"))
+    porcentaje_isr       = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("0.00"))
+    cantidad             = models.PositiveIntegerField()
 
     def __str__(self):
         return f"{self.nombre_producto} x{self.cantidad}"
+
+    @property
+    def precio_neto(self):
+        """Precio unitario después de aplicar descuentos."""
+        precio_desc = self.precio_unitario * (
+            Decimal("1") - self.descuento_porcentaje / Decimal("100")
+        )
+        return max(Decimal("0"), precio_desc - self.descuento_monto)
 
     @property
     def subtotal_unitario(self):
@@ -67,7 +68,7 @@ class CotizacionItem(models.Model):
             + self.porcentaje_iva / Decimal("100")
             + self.porcentaje_isr / Decimal("100")
         )
-        return self.precio_unitario * factor
+        return self.precio_neto * factor
 
     @property
     def total(self):

@@ -217,3 +217,44 @@ class TipoProducto(models.Model):
 
     def __str__(self):
         return self.nombre
+
+
+class CategoriaProducto(models.Model):
+    nombre = models.CharField(max_length=100, unique=True)
+    descripcion = models.TextField(blank=True)
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["nombre"]
+        verbose_name = "Categoría de Producto"
+        verbose_name_plural = "Categorías de Producto"
+
+    def __str__(self):
+        return self.nombre
+
+
+class UnidadMedida(models.Model):
+    nombre = models.CharField(max_length=100, unique=True)
+    abreviatura = models.CharField(max_length=20, blank=True)
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["nombre"]
+        verbose_name = "Unidad de Medida"
+        verbose_name_plural = "Unidades de Medida"
+
+    def __str__(self):
+        return f"{self.nombre} ({self.abreviatura})" if self.abreviatura else self.nombre
+
+
+class MotivoSalida(models.Model):
+    nombre = models.CharField(max_length=100, unique=True)
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["nombre"]
+        verbose_name = "Motivo de Salida"
+        verbose_name_plural = "Motivos de Salida"
+
+    def __str__(self):
+        return self.nombre

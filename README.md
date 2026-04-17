@@ -34,6 +34,17 @@ Sistema ERP interno construido con Django REST Framework + React 18, orientado a
 - Distribución visual de OTs y cotizaciones por estatus con barras de progreso
 - Tablas de actividad reciente: últimas 5 OTs y cotizaciones con acceso directo a cada módulo
 
+### Maestros — nuevas entidades configurables
+- **Categorías de Producto**: CRUD completo; los dropdowns de categoría en Inventario se alimentan desde aquí
+- **Unidades de Medida**: CRUD con nombre y abreviatura; usadas en Inventario y Cotizaciones dinámicamente
+- **Motivos de Salida**: CRUD; usados en salidas del KARDEX
+
+### Cotizaciones — descuentos por línea
+- Campo "Descuento %" por ítem en el formulario de cotización
+- El cálculo de totales (subtotal, IVA, ISR, TOTAL) aplica el descuento antes de los impuestos
+- El PDF muestra columna "DSCTO." y resalta en rojo si hay descuento activo
+- La vista de detalle también muestra el descuento por ítem
+
 ### Órdenes de Trabajo
 - Exportación a PDF por OT: encabezado con datos de empresa, detalle de cliente, tipo de trabajo, técnico, fechas y descripción
 - Cierre formal de OT: formulario de cierre con fecha de finalización, horas trabajadas, informe de cierre, nombre del receptor y confirmación de firma del cliente

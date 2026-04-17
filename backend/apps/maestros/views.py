@@ -1,11 +1,16 @@
 from rest_framework import viewsets, filters
 from rest_framework.generics import RetrieveUpdateAPIView
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Marca, Modelo, TipoPago, TipoTrabajo, TipoEstatus, TipoServicio, Personal, TipoCliente, TipoProducto, EmpresaConfig
+from .models import (
+    Marca, Modelo, TipoPago, TipoTrabajo, TipoEstatus, TipoServicio,
+    Personal, TipoCliente, TipoProducto, EmpresaConfig,
+    CategoriaProducto, UnidadMedida, MotivoSalida,
+)
 from .serializers import (
     MarcaSerializer, ModeloSerializer, TipoPagoSerializer, TipoTrabajoSerializer,
     TipoEstatusSerializer, TipoServicioSerializer, PersonalSerializer, TipoClienteSerializer,
     TipoProductoSerializer, EmpresaConfigSerializer,
+    CategoriaProductoSerializer, UnidadMedidaSerializer, MotivoSalidaSerializer,
 )
 
 
@@ -78,6 +83,30 @@ class TipoClienteViewSet(viewsets.ModelViewSet):
 class TipoProductoViewSet(viewsets.ModelViewSet):
     queryset = TipoProducto.objects.all()
     serializer_class = TipoProductoSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ["activo"]
+    search_fields = ["nombre"]
+
+
+class CategoriaProductoViewSet(viewsets.ModelViewSet):
+    queryset = CategoriaProducto.objects.all()
+    serializer_class = CategoriaProductoSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ["activo"]
+    search_fields = ["nombre"]
+
+
+class UnidadMedidaViewSet(viewsets.ModelViewSet):
+    queryset = UnidadMedida.objects.all()
+    serializer_class = UnidadMedidaSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ["activo"]
+    search_fields = ["nombre", "abreviatura"]
+
+
+class MotivoSalidaViewSet(viewsets.ModelViewSet):
+    queryset = MotivoSalida.objects.all()
+    serializer_class = MotivoSalidaSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ["activo"]
     search_fields = ["nombre"]

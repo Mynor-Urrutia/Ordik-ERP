@@ -4,7 +4,7 @@ import { faPlus, faFilePdf, faClipboardList } from "@fortawesome/free-solid-svg-
 import { cotizacionesService } from "../../services/api/cotizaciones";
 import { clientesService } from "../../services/api/clientes";
 import { inventarioService } from "../../services/api/inventario";
-import { tiposServicioService, tiposEstatusService, tiposTrabajoService, personalService } from "../../services/api/maestros";
+import { tiposServicioService, tiposEstatusService, tiposTrabajoService, personalService, unidadesMedidaService } from "../../services/api/maestros";
 import { ordenesTrabajoService } from "../../services/api/ordenesTrabajo";
 import DataTable from "../../components/ui/DataTable";
 import Modal from "../../components/ui/Modal";
@@ -18,22 +18,10 @@ const EMPTY_FORM = {
 
 const EMPTY_ITEM = {
   nombre_producto: "", descripcion: "", unidad_medida: "unidad",
-  precio_unitario: "", porcentaje_iva: "12", porcentaje_isr: "0", cantidad: "1",
+  precio_unitario: "", descuento_porcentaje: "0", descuento_monto: "0",
+  porcentaje_iva: "12", porcentaje_isr: "0", cantidad: "1",
 };
-
-const UNIDADES = [
-  { value: "unidad",   label: "Unidad" },
-  { value: "hora",     label: "Hora" },
-  { value: "servicio", label: "Servicio" },
-  { value: "mes",      label: "Mes" },
-  { value: "metro",    label: "Metro lineal" },
-  { value: "m2",       label: "Metro cuadrado" },
-  { value: "kg",       label: "Kilogramo" },
-  { value: "litro",    label: "Litro" },
-  { value: "caja",     label: "Caja" },
-  { value: "paquete",  label: "Paquete" },
-  { value: "global",   label: "Global" },
-];
+// UNIDADES se carga desde maestros dinámicamente
 
 const CONDICIONES_PAGO = [
   "Contado", "Crédito 15 días", "Crédito 30 días",
@@ -93,12 +81,15 @@ const COLS = [
 
 // ── Cálculos de ítem ─────────────────────────────────────────────────────────
 const calcItem = (it) => {
-  const p   = parseFloat(it.precio_unitario) || 0;
-  const iva = parseFloat(it.porcentaje_iva)  || 0;
-  const isr = parseFloat(it.porcentaje_isr)  || 0;
-  const q   = parseInt(it.cantidad)          || 0;
-  const subtotal = p * (1 + iva / 100 + isr / 100);
-  return { subtotal, total: subtotal * q };
+  const p       = parseFloat(it.precio_unitario)      || 0;
+  const descPct = parseFloat(it.descuento_porcentaje) || 0;
+  const descMnt = parseFloat(it.descuento_monto)      || 0;
+  const iva     = parseFloat(it.porcentaje_iva)       || 0;
+  const isr     = parseFloat(it.porcentaje_isr)       || 0;
+  const q       = parseInt(it.cantidad)               || 0;
+  const pNeto   = Math.max(0, p * (1 - descPct / 100) - descMnt);
+  const subtotal = pNeto * (1 + iva / 100 + isr / 100);
+  return { subtotal, total: subtotal * q, pNeto };
 };
 
 const fmt = (n) => `Q${parseFloat(n || 0).toLocaleString("es-GT", { minimumFractionDigits: 2 })}`;
@@ -126,21 +117,30 @@ function DetalleCotizacion({ cot: cotInicial, clientes, personal, tiposTrabajo, 
 
   // Cálculos
   const subtotal = (cot.items ?? []).reduce((s, it) => {
-    const p = parseFloat(it.precio_unitario) || 0;
-    const q = parseInt(it.cantidad) || 0;
-    return s + p * q;
+    const p       = parseFloat(it.precio_unitario)      || 0;
+    const descPct = parseFloat(it.descuento_porcentaje) || 0;
+    const descMnt = parseFloat(it.descuento_monto)      || 0;
+    const q       = parseInt(it.cantidad)               || 0;
+    const pNeto   = Math.max(0, p * (1 - descPct / 100) - descMnt);
+    return s + pNeto * q;
   }, 0);
   const totalIva = (cot.items ?? []).reduce((s, it) => {
-    const p = parseFloat(it.precio_unitario) || 0;
-    const iva = parseFloat(it.porcentaje_iva) || 0;
-    const q = parseInt(it.cantidad) || 0;
-    return s + p * (iva / 100) * q;
+    const p       = parseFloat(it.precio_unitario)      || 0;
+    const descPct = parseFloat(it.descuento_porcentaje) || 0;
+    const descMnt = parseFloat(it.descuento_monto)      || 0;
+    const iva     = parseFloat(it.porcentaje_iva)       || 0;
+    const q       = parseInt(it.cantidad)               || 0;
+    const pNeto   = Math.max(0, p * (1 - descPct / 100) - descMnt);
+    return s + pNeto * (iva / 100) * q;
   }, 0);
   const totalIsr = (cot.items ?? []).reduce((s, it) => {
-    const p = parseFloat(it.precio_unitario) || 0;
-    const isr = parseFloat(it.porcentaje_isr) || 0;
-    const q = parseInt(it.cantidad) || 0;
-    return s + p * (isr / 100) * q;
+    const p       = parseFloat(it.precio_unitario)      || 0;
+    const descPct = parseFloat(it.descuento_porcentaje) || 0;
+    const descMnt = parseFloat(it.descuento_monto)      || 0;
+    const isr     = parseFloat(it.porcentaje_isr)       || 0;
+    const q       = parseInt(it.cantidad)               || 0;
+    const pNeto   = Math.max(0, p * (1 - descPct / 100) - descMnt);
+    return s + pNeto * (isr / 100) * q;
   }, 0);
   const total = parseFloat(cot.total) || (subtotal + totalIva + totalIsr);
 
@@ -284,6 +284,7 @@ function DetalleCotizacion({ cot: cotInicial, clientes, personal, tiposTrabajo, 
                 <th className="px-4 py-2.5 text-left text-xs font-medium">Producto / Servicio</th>
                 <th className="px-3 py-2.5 text-center text-xs font-medium">U/M</th>
                 <th className="px-3 py-2.5 text-right text-xs font-medium">P. Unit.</th>
+                <th className="px-3 py-2.5 text-right text-xs font-medium">Dscto.</th>
                 <th className="px-3 py-2.5 text-right text-xs font-medium">IVA %</th>
                 <th className="px-3 py-2.5 text-right text-xs font-medium">ISR %</th>
                 <th className="px-3 py-2.5 text-right text-xs font-medium">Cant.</th>
@@ -292,21 +293,34 @@ function DetalleCotizacion({ cot: cotInicial, clientes, personal, tiposTrabajo, 
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
               {(cot.items ?? []).length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-6 text-gray-400 text-xs italic">Sin ítems</td></tr>
+                <tr><td colSpan={8} className="text-center py-6 text-gray-400 text-xs italic">Sin ítems</td></tr>
               ) : (cot.items ?? []).map((it, i) => {
-                const p = parseFloat(it.precio_unitario) || 0;
-                const iva = parseFloat(it.porcentaje_iva) || 0;
-                const isr = parseFloat(it.porcentaje_isr) || 0;
-                const q = parseInt(it.cantidad) || 0;
-                const tot = p * (1 + iva / 100 + isr / 100) * q;
+                const p       = parseFloat(it.precio_unitario)      || 0;
+                const descPct = parseFloat(it.descuento_porcentaje) || 0;
+                const descMnt = parseFloat(it.descuento_monto)      || 0;
+                const iva     = parseFloat(it.porcentaje_iva)       || 0;
+                const isr     = parseFloat(it.porcentaje_isr)       || 0;
+                const q       = parseInt(it.cantidad)               || 0;
+                const pNeto   = Math.max(0, p * (1 - descPct / 100) - descMnt);
+                const tot     = pNeto * (1 + iva / 100 + isr / 100) * q;
+                const tieneDescuento = descPct > 0 || descMnt > 0;
                 return (
                   <tr key={i} className={i % 2 === 0 ? "bg-white dark:bg-slate-800" : "bg-gray-50 dark:bg-slate-750"}>
                     <td className="px-4 py-2.5">
                       <p className="font-medium text-gray-800 dark:text-slate-200">{it.nombre_producto}</p>
                       {it.descripcion && <p className="text-xs text-gray-400 mt-0.5 italic">{it.descripcion}</p>}
                     </td>
-                    <td className="px-3 py-2.5 text-center text-gray-500 text-xs">{it.unidad_medida_display ?? it.unidad_medida}</td>
+                    <td className="px-3 py-2.5 text-center text-gray-500 text-xs">{it.unidad_medida}</td>
                     <td className="px-3 py-2.5 text-right text-gray-700 dark:text-slate-300">{fmt(p)}</td>
+                    <td className="px-3 py-2.5 text-right text-xs">
+                      {tieneDescuento ? (
+                        <span className="text-rose-600 font-semibold">
+                          {descPct > 0 ? `${descPct}%` : fmt(descMnt)}
+                        </span>
+                      ) : (
+                        <span className="text-gray-300">—</span>
+                      )}
+                    </td>
                     <td className="px-3 py-2.5 text-right text-gray-500 text-xs">{iva}%</td>
                     <td className="px-3 py-2.5 text-right text-gray-500 text-xs">{isr > 0 ? `${isr}%` : "—"}</td>
                     <td className="px-3 py-2.5 text-right font-semibold text-gray-700 dark:text-slate-300">{q}</td>
@@ -317,23 +331,23 @@ function DetalleCotizacion({ cot: cotInicial, clientes, personal, tiposTrabajo, 
             </tbody>
             <tfoot className="bg-gray-50 dark:bg-slate-700 border-t-2 border-gray-200 dark:border-slate-600">
               <tr>
-                <td colSpan={6} className="px-4 py-2 text-right text-xs text-gray-500">Subtotal sin impuestos</td>
+                <td colSpan={7} className="px-4 py-2 text-right text-xs text-gray-500">Subtotal sin impuestos</td>
                 <td className="px-3 py-2 text-right font-semibold text-gray-700 dark:text-slate-300">{fmt(subtotal)}</td>
               </tr>
               {totalIva > 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-1.5 text-right text-xs text-gray-500">IVA</td>
+                  <td colSpan={7} className="px-4 py-1.5 text-right text-xs text-gray-500">IVA</td>
                   <td className="px-3 py-1.5 text-right text-sm text-gray-600 dark:text-slate-400">{fmt(totalIva)}</td>
                 </tr>
               )}
               {totalIsr > 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-1.5 text-right text-xs text-gray-500">ISR</td>
+                  <td colSpan={7} className="px-4 py-1.5 text-right text-xs text-gray-500">ISR</td>
                   <td className="px-3 py-1.5 text-right text-sm text-gray-600 dark:text-slate-400">{fmt(totalIsr)}</td>
                 </tr>
               )}
               <tr className="bg-slate-700 text-white">
-                <td colSpan={6} className="px-4 py-3 text-right font-bold text-sm tracking-wide">TOTAL</td>
+                <td colSpan={7} className="px-4 py-3 text-right font-bold text-sm tracking-wide">TOTAL</td>
                 <td className="px-3 py-3 text-right font-bold text-lg">{fmt(total)}</td>
               </tr>
             </tfoot>
@@ -481,6 +495,7 @@ export default function CotizacionesPage() {
   const [tiposEstatus, setTiposEstatus]   = useState([]);
   const [tiposTrabajo, setTiposTrabajo]   = useState([]);
   const [personal, setPersonal]     = useState([]);
+  const [unidadesMedida, setUnidadesMedida] = useState([]);
   const [form, setForm]             = useState(EMPTY_FORM);
   const [formItems, setFormItems]   = useState([{ ...EMPTY_ITEM }]);
   const [editing, setEditing]       = useState(null);
@@ -515,16 +530,18 @@ export default function CotizacionesPage() {
 
   const loadMaestros = async () => {
     try {
-      const [ts, te, per, tt] = await Promise.all([
+      const [ts, te, per, tt, um] = await Promise.all([
         tiposServicioService.getAll({ activo: true }),
         tiposEstatusService.getAll({ activo: true, modulo: "cotizaciones" }),
         personalService.getAll({ activo: true }),
         tiposTrabajoService.getAll({ activo: true }),
+        unidadesMedidaService.getAll({ activo: true }),
       ]);
       setTiposServicio(ts.data.results ?? ts.data);
       setTiposEstatus(te.data.results ?? te.data);
       setPersonal(per.data.results ?? per.data);
       setTiposTrabajo(tt.data.results ?? tt.data);
+      setUnidadesMedida(um.data.results ?? um.data);
     } catch (e) { console.error(e); }
   };
 
@@ -603,13 +620,15 @@ export default function CotizacionesPage() {
       notas:            item.notas ?? "",
     });
     setFormItems(item.items?.length ? item.items.map((it) => ({
-      nombre_producto: it.nombre_producto,
-      descripcion:     it.descripcion     ?? "",
-      unidad_medida:   it.unidad_medida   ?? "unidad",
-      precio_unitario: it.precio_unitario,
-      porcentaje_iva:  it.porcentaje_iva,
-      porcentaje_isr:  it.porcentaje_isr,
-      cantidad:        it.cantidad,
+      nombre_producto:      it.nombre_producto,
+      descripcion:          it.descripcion          ?? "",
+      unidad_medida:        it.unidad_medida        ?? "unidad",
+      precio_unitario:      it.precio_unitario,
+      descuento_porcentaje: it.descuento_porcentaje ?? "0",
+      descuento_monto:      it.descuento_monto      ?? "0",
+      porcentaje_iva:       it.porcentaje_iva,
+      porcentaje_isr:       it.porcentaje_isr,
+      cantidad:             it.cantidad,
     })) : [{ ...EMPTY_ITEM }]);
     setOpen(true);
   };
@@ -809,10 +828,11 @@ export default function CotizacionesPage() {
             <Seccion titulo="Productos / Servicios">
               <div className="space-y-0 rounded-lg border overflow-hidden">
                 {/* Cabecera */}
-                <div className="grid grid-cols-[2fr_1fr_80px_80px_80px_80px_100px_32px] gap-0 bg-gray-50 text-xs font-semibold text-gray-500 uppercase px-3 py-2 border-b">
+                <div className="grid grid-cols-[2fr_100px_70px_70px_70px_70px_70px_90px_32px] gap-0 bg-gray-50 text-xs font-semibold text-gray-500 uppercase px-3 py-2 border-b">
                   <div>Producto / Servicio</div>
                   <div>Unidad</div>
                   <div className="text-right">P. Unit.</div>
+                  <div className="text-right">Dscto. %</div>
                   <div className="text-right">IVA %</div>
                   <div className="text-right">ISR %</div>
                   <div className="text-right">Cant.</div>
@@ -826,7 +846,7 @@ export default function CotizacionesPage() {
                   return (
                     <div key={i} className="border-b last:border-b-0 bg-white">
                       {/* Fila 1: nombre + unidad + números */}
-                      <div className="grid grid-cols-[2fr_1fr_80px_80px_80px_80px_100px_32px] gap-0 px-3 py-2 items-start">
+                      <div className="grid grid-cols-[2fr_100px_70px_70px_70px_70px_70px_90px_32px] gap-0 px-3 py-2 items-start">
                         {/* Nombre con autocomplete */}
                         <div className="relative pr-2">
                           <input
@@ -877,8 +897,11 @@ export default function CotizacionesPage() {
                         {/* Unidad */}
                         <div className="pr-2">
                           <select value={it.unidad_medida} onChange={(e) => updateItem(i, "unidad_medida", e.target.value)}
-                            className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400">
-                            {UNIDADES.map((u) => <option key={u.value} value={u.value}>{u.label}</option>)}
+                            className="w-full border border-gray-200 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400">
+                            <option value="unidad">Unidad</option>
+                            {unidadesMedida.map((u) => (
+                              <option key={u.id} value={u.abreviatura || u.nombre}>{u.nombre}</option>
+                            ))}
                           </select>
                         </div>
 
@@ -887,28 +910,36 @@ export default function CotizacionesPage() {
                           <input type="number" min="0" step="0.01" value={it.precio_unitario}
                             onChange={(e) => updateItem(i, "precio_unitario", e.target.value)} required
                             placeholder="0.00"
-                            className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-1 focus:ring-blue-400" />
+                            className="w-full border border-gray-200 rounded px-2 py-1.5 text-xs text-right focus:outline-none focus:ring-1 focus:ring-blue-400" />
+                        </div>
+
+                        {/* Descuento % */}
+                        <div className="pr-2">
+                          <input type="number" min="0" max="100" step="0.01" value={it.descuento_porcentaje}
+                            onChange={(e) => updateItem(i, "descuento_porcentaje", e.target.value)}
+                            placeholder="0"
+                            className="w-full border border-gray-200 rounded px-2 py-1.5 text-xs text-right focus:outline-none focus:ring-1 focus:ring-rose-400" />
                         </div>
 
                         {/* IVA */}
                         <div className="pr-2">
                           <input type="number" min="0" step="0.01" value={it.porcentaje_iva}
                             onChange={(e) => updateItem(i, "porcentaje_iva", e.target.value)} required
-                            className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-1 focus:ring-blue-400" />
+                            className="w-full border border-gray-200 rounded px-2 py-1.5 text-xs text-right focus:outline-none focus:ring-1 focus:ring-blue-400" />
                         </div>
 
                         {/* ISR */}
                         <div className="pr-2">
                           <input type="number" min="0" step="0.01" value={it.porcentaje_isr}
                             onChange={(e) => updateItem(i, "porcentaje_isr", e.target.value)} required
-                            className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-1 focus:ring-blue-400" />
+                            className="w-full border border-gray-200 rounded px-2 py-1.5 text-xs text-right focus:outline-none focus:ring-1 focus:ring-blue-400" />
                         </div>
 
                         {/* Cantidad */}
                         <div className="pr-2">
                           <input type="number" min="1" step="1" value={it.cantidad}
                             onChange={(e) => updateItem(i, "cantidad", e.target.value)} required
-                            className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-1 focus:ring-blue-400" />
+                            className="w-full border border-gray-200 rounded px-2 py-1.5 text-xs text-right focus:outline-none focus:ring-1 focus:ring-blue-400" />
                         </div>
 
                         {/* Total */}

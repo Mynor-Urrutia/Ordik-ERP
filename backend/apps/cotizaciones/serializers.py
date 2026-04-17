@@ -3,16 +3,18 @@ from .models import Cotizacion, CotizacionItem
 
 
 class CotizacionItemSerializer(serializers.ModelSerializer):
-    subtotal_unitario    = serializers.ReadOnlyField()
-    total                = serializers.ReadOnlyField()
-    unidad_medida_display = serializers.CharField(source="get_unidad_medida_display", read_only=True)
+    precio_neto       = serializers.ReadOnlyField()
+    subtotal_unitario = serializers.ReadOnlyField()
+    total             = serializers.ReadOnlyField()
 
     class Meta:
         model  = CotizacionItem
         fields = [
             "id", "nombre_producto", "descripcion",
-            "unidad_medida", "unidad_medida_display",
-            "precio_unitario", "porcentaje_iva", "porcentaje_isr",
+            "unidad_medida",
+            "precio_unitario",
+            "descuento_porcentaje", "descuento_monto", "precio_neto",
+            "porcentaje_iva", "porcentaje_isr",
             "cantidad", "subtotal_unitario", "total",
         ]
 

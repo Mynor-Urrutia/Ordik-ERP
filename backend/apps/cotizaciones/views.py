@@ -93,11 +93,12 @@ class CotizacionViewSet(viewsets.ModelViewSet):
             p.setFont("Helvetica-Bold", 7.5)
             p.drawString(M + 6,          y_th - 14, "#")
             p.drawString(M + 22,         y_th - 14, "DESCRIPCIÓN DEL PRODUCTO / SERVICIO")
-            p.drawString(M + 278,        y_th - 14, "U/M")
-            p.drawRightString(M + 335,   y_th - 14, "CANT.")
-            p.drawRightString(M + 393,   y_th - 14, "P. UNIT.")
-            p.drawRightString(M + 428,   y_th - 14, "IVA%")
-            p.drawRightString(M + 460,   y_th - 14, "ISR%")
+            p.drawString(M + 258,        y_th - 14, "U/M")
+            p.drawRightString(M + 310,   y_th - 14, "CANT.")
+            p.drawRightString(M + 360,   y_th - 14, "P. UNIT.")
+            p.drawRightString(M + 400,   y_th - 14, "DSCTO.")
+            p.drawRightString(M + 432,   y_th - 14, "IVA%")
+            p.drawRightString(M + 462,   y_th - 14, "ISR%")
             p.drawRightString(W - M - 2, y_th - 14, "TOTAL")
 
         # ════════════════════════════════════════════════════════════════════
@@ -257,10 +258,11 @@ class CotizacionViewSet(viewsets.ModelViewSet):
                 draw_table_header(y)
                 y -= 20
 
-            base_line  = float(item.precio_unitario) * item.cantidad
-            iva_line   = base_line * float(item.porcentaje_iva) / 100
-            isr_line   = base_line * float(item.porcentaje_isr) / 100
-            total_line = base_line + iva_line + isr_line
+            precio_neto = float(item.precio_neto)
+            base_line   = precio_neto * item.cantidad
+            iva_line    = base_line * float(item.porcentaje_iva) / 100
+            isr_line    = base_line * float(item.porcentaje_isr) / 100
+            total_line  = base_line + iva_line + isr_line
 
             subtotal_base += base_line
             iva_total     += iva_line
@@ -275,29 +277,44 @@ class CotizacionViewSet(viewsets.ModelViewSet):
 
             p.setFillColor(C_DARK)
             p.setFont("Helvetica-Bold", 8.5)
-            p.drawString(M + 22, y - 13, item.nombre_producto[:46])
+            p.drawString(M + 22, y - 13, item.nombre_producto[:44])
 
             if has_desc:
                 p.setFillColor(C_GRAY)
                 p.setFont("Helvetica-Oblique", 7.5)
-                p.drawString(M + 22, y - 24, item.descripcion[:68])
+                p.drawString(M + 22, y - 24, item.descripcion[:66])
 
             p.setFillColor(C_GRAY)
             p.setFont("Helvetica", 8)
-            p.drawString(M + 278, y - 13, item.get_unidad_medida_display()[:10])
+            p.drawString(M + 258, y - 13, str(item.unidad_medida)[:10])
 
             p.setFillColor(C_DARK)
             p.setFont("Helvetica-Bold", 8.5)
-            p.drawRightString(M + 335, y - 13, str(item.cantidad))
+            p.drawRightString(M + 310, y - 13, str(item.cantidad))
 
             p.setFont("Helvetica", 8.5)
-            p.drawRightString(M + 393, y - 13, f"Q {float(item.precio_unitario):,.2f}")
+            p.drawRightString(M + 360, y - 13, f"Q {float(item.precio_unitario):,.2f}")
+
+            # Descuento
+            tiene_dscto = float(item.descuento_porcentaje) > 0 or float(item.descuento_monto) > 0
+            if tiene_dscto:
+                if float(item.descuento_porcentaje) > 0:
+                    dscto_str = f"{float(item.descuento_porcentaje):.1f}%"
+                else:
+                    dscto_str = f"Q {float(item.descuento_monto):,.2f}"
+                p.setFillColor(colors.HexColor("#dc2626"))
+                p.setFont("Helvetica-Bold", 8)
+            else:
+                dscto_str = "—"
+                p.setFillColor(C_GRAY)
+                p.setFont("Helvetica", 8)
+            p.drawRightString(M + 400, y - 13, dscto_str)
 
             p.setFillColor(C_GRAY)
             p.setFont("Helvetica", 8)
-            p.drawRightString(M + 428, y - 13, f"{float(item.porcentaje_iva):.0f}%")
+            p.drawRightString(M + 432, y - 13, f"{float(item.porcentaje_iva):.0f}%")
             isr_str = f"{float(item.porcentaje_isr):.0f}%" if float(item.porcentaje_isr) > 0 else "—"
-            p.drawRightString(M + 460, y - 13, isr_str)
+            p.drawRightString(M + 462, y - 13, isr_str)
 
             p.setFillColor(C_DARK)
             p.setFont("Helvetica-Bold", 8.5)

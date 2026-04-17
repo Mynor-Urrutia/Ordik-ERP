@@ -4,6 +4,7 @@ from .views import (
     MarcaViewSet, ModeloViewSet, TipoPagoViewSet, TipoTrabajoViewSet,
     TipoEstatusViewSet, TipoServicioViewSet, PersonalViewSet, TipoClienteViewSet,
     TipoProductoViewSet, EmpresaConfigView,
+    CategoriaProductoViewSet, UnidadMedidaViewSet, MotivoSalidaViewSet,
 )
 
 router = DefaultRouter()
@@ -16,6 +17,9 @@ router.register("tipos-servicio", TipoServicioViewSet, basename="tipo-servicio")
 router.register("personal", PersonalViewSet, basename="personal")
 router.register("tipos-cliente", TipoClienteViewSet, basename="tipo-cliente")
 router.register("tipos-producto", TipoProductoViewSet, basename="tipo-producto")
+router.register("categorias-producto", CategoriaProductoViewSet, basename="categoria-producto")
+router.register("unidades-medida", UnidadMedidaViewSet, basename="unidad-medida")
+router.register("motivos-salida", MotivoSalidaViewSet, basename="motivo-salida")
 
 urlpatterns = router.urls + [
     path("empresa/", EmpresaConfigView.as_view(), name="empresa-config"),
