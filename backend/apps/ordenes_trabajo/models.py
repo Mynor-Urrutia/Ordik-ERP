@@ -25,6 +25,19 @@ class OrdenTrabajo(models.Model):
         related_name="ordenes",
     )
 
+    # ── Datos del equipo / dispositivo ──────────────────────────────────────
+    prioridad         = models.CharField(max_length=20, blank=True, default="Media")
+    equipo            = models.CharField(max_length=200, blank=True)
+    marca             = models.CharField(max_length=100, blank=True)
+    modelo            = models.CharField(max_length=100, blank=True)
+    numero_serie      = models.CharField(max_length=100, blank=True)
+
+    # ── Logística ────────────────────────────────────────────────────────────
+    ubicacion_servicio       = models.CharField(max_length=300, blank=True)
+    telefono_contacto_obra   = models.CharField(max_length=30, blank=True)
+    materiales_requeridos    = models.TextField(blank=True)
+    notas_tecnico            = models.TextField(blank=True)
+
     # ── Campos de cierre formal ──────────────────────────────────────────────
     observaciones_cierre = models.TextField(blank=True)
     horas_trabajadas = models.DecimalField(

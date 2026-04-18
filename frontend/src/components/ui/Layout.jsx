@@ -13,8 +13,13 @@ import {
   faSliders,
   faSun,
   faMoon,
+  faFileInvoice,
+  faChartBar,
+  faRightFromBracket,
+  faCircleUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { useTheme } from "../../hooks/useTheme";
+import { useAuth } from "../../contexts/AuthContext";
 
 const NAV_MAIN = [
   { to: "/",                label: "Dashboard",          icon: faGaugeHigh,          exact: true },
@@ -24,11 +29,14 @@ const NAV_MAIN = [
   { to: "/cotizaciones",    label: "Cotizaciones",       icon: faFileInvoiceDollar },
   { to: "/inventario",      label: "Inventario",         icon: faBoxesStacked },
   { to: "/compras",         label: "Compras",            icon: faCartShopping },
+  { to: "/facturacion",     label: "Facturación",        icon: faFileInvoice },
+  { to: "/reportes",        label: "Reportes",           icon: faChartBar },
 ];
 
 export default function Layout({ children }) {
   const { pathname } = useLocation();
   const { dark, toggle } = useTheme();
+  const { user, logout } = useAuth();
 
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-slate-900 font-sans transition-colors duration-200">
@@ -84,8 +92,20 @@ export default function Layout({ children }) {
           </Link>
         </nav>
 
-        {/* Dark mode toggle */}
-        <div className="px-5 py-4 border-t border-slate-700 dark:border-slate-800">
+        {/* Usuario + controles */}
+        <div className="px-5 py-4 border-t border-slate-700 dark:border-slate-800 space-y-3">
+          {/* Info usuario */}
+          {user && (
+            <div className="flex items-center gap-2">
+              <FontAwesomeIcon icon={faCircleUser} className="w-5 h-5 text-slate-400 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-white truncate">{user.nombre || user.username}</p>
+                <p className="text-xs text-slate-400 capitalize">{user.rol_display || user.rol}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Dark mode toggle */}
           <button
             onClick={toggle}
             title={dark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
@@ -104,6 +124,15 @@ export default function Layout({ children }) {
             </div>
             <FontAwesomeIcon icon={dark ? faMoon : faSun} className="w-4 h-4" />
             <span>{dark ? "Modo oscuro" : "Modo claro"}</span>
+          </button>
+
+          {/* Logout */}
+          <button
+            onClick={logout}
+            className="flex items-center gap-3 w-full text-sm text-slate-400 hover:text-red-400 transition-colors"
+          >
+            <FontAwesomeIcon icon={faRightFromBracket} className="w-4 h-4" />
+            <span>Cerrar sesión</span>
           </button>
         </div>
       </aside>
