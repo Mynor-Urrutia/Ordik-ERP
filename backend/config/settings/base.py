@@ -15,8 +15,10 @@ INSTALLED_APPS = [
     # Third party
     "rest_framework",
     "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
     "django_filters",
     "corsheaders",
+    "axes",
     # Local apps
     "apps.usuarios",
     "apps.clientes",
@@ -37,6 +39,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "axes.middleware.AxesMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -75,9 +78,14 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 8}},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+]
+
+AUTHENTICATION_BACKENDS = [
+    "axes.backends.AxesStandaloneBackend",
+    "django.contrib.auth.backends.ModelBackend",
 ]
 
 LANGUAGE_CODE = "es-co"
@@ -111,11 +119,18 @@ REST_FRAMEWORK = {
 from datetime import timedelta  # noqa: E402
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME":  timedelta(hours=8),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
-    "ROTATE_REFRESH_TOKENS":  True,
-    "BLACKLIST_AFTER_ROTATION": False,
-    "AUTH_HEADER_TYPES": ("Bearer",),
-    "USER_ID_FIELD": "id",
-    "USER_ID_CLAIM": "user_id",
+    "ACCESS_TOKEN_LIFETIME":    timedelta(hours=8),
+    "REFRESH_TOKEN_LIFETIME":   timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS":    True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "AUTH_HEADER_TYPES":        ("Bearer",),
+    "USER_ID_FIELD":            "id",
+    "USER_ID_CLAIM":            "user_id",
 }
+
+# django-axes: bloqueo por intentos fallidos de login
+AXES_FAILURE_LIMIT        = 5       # bloquear tras 5 intentos fallidos
+AXES_COOLOFF_TIME         = 1       # horas de bloqueo
+AXES_LOCKOUT_PARAMETERS   = ["username", "ip_address"]
+AXES_RESET_ON_SUCCESS     = True    # limpiar contador al login exitoso
+AXES_ENABLE_ADMIN         = True

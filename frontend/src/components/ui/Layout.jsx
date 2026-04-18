@@ -17,6 +17,7 @@ import {
   faChartBar,
   faRightFromBracket,
   faCircleUser,
+  faGear,
 } from "@fortawesome/free-solid-svg-icons";
 import { useTheme } from "../../hooks/useTheme";
 import { useAuth } from "../../contexts/AuthContext";
@@ -90,6 +91,21 @@ export default function Layout({ children }) {
             <FontAwesomeIcon icon={faSliders} className="w-4 h-4 shrink-0" />
             <span>Datos Maestros</span>
           </Link>
+
+          {/* Configuración — solo admin */}
+          {user?.rol === "admin" && (
+            <Link
+              to="/configuracion"
+              className={`flex items-center gap-3 px-5 py-2.5 text-sm transition-all duration-150
+                ${pathname.startsWith("/configuracion")
+                  ? "bg-slate-600 text-white font-semibold shadow-sm"
+                  : "text-slate-400 hover:bg-slate-700 hover:text-white"
+                }`}
+            >
+              <FontAwesomeIcon icon={faGear} className="w-4 h-4 shrink-0" />
+              <span>Configuración</span>
+            </Link>
+          )}
         </nav>
 
         {/* Usuario + controles */}

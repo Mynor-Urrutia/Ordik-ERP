@@ -7,6 +7,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.colors import HexColor
+from rest_framework.permissions import IsAuthenticated
+from apps.usuarios.permissions import ReadOrAdminSupervisorOrBodeguero, IsAdminSupervisorOrBodeguero
 from .models import Producto, MovimientoInventario, UnidadSeriada
 from .serializers import (
     ProductoSerializer,
@@ -39,12 +41,13 @@ class MovimientoPagination(PageNumberPagination):
 
 
 class ProductoViewSet(viewsets.ModelViewSet):
-    queryset = Producto.objects.select_related("proveedor").all()
-    serializer_class = ProductoSerializer
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ["nombre", "cod_producto", "categoria", "marca", "proveedor__razon_social"]
-    ordering_fields = ["nombre", "cod_producto", "categoria", "costo_unitario", "stock_actual"]
-    ordering = ["nombre"]
+    queryset           = Producto.objects.select_related("proveedor").all()
+    serializer_class   = ProductoSerializer
+    permission_classes = [IsAuthenticated, ReadOrAdminSupervisorOrBodeguero]
+    filter_backends    = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields      = ["nombre", "cod_producto", "categoria", "marca", "proveedor__razon_social"]
+    ordering_fields    = ["nombre", "cod_producto", "categoria", "costo_unitario", "stock_actual"]
+    ordering           = ["nombre"]
 
     @action(detail=False, methods=["get"], url_path="pdf")
     def generar_pdf(self, request):
@@ -238,6 +241,7 @@ class ProductoViewSet(viewsets.ModelViewSet):
 class MovimientoInventarioViewSet(viewsets.ModelViewSet):
     serializer_class   = MovimientoInventarioSerializer
     pagination_class   = MovimientoPagination
+    permission_classes = [IsAuthenticated, IsAdminSupervisorOrBodeguero]
     http_method_names  = ["get", "post", "head", "options"]  # CARDEX: inmutable
     filter_backends    = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields   = ["producto", "orden_compra", "tipo"]

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import authService from "../services/api/auth";
+import api from "../services/api/client";
 
 const AuthContext = createContext(null);
 
@@ -7,7 +8,16 @@ export function AuthProvider({ children }) {
   const [user, setUser]     = useState(null);
   const [ready, setReady]   = useState(false); // tokens verificados
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    const refresh = localStorage.getItem("refresh");
+    if (refresh) {
+      try {
+        await authService.logout(refresh);
+      } catch (err) {
+        // Token already expired or blacklisted — nothing to revoke, proceed with local cleanup.
+        if (err.response?.status !== 400) throw err;
+      }
+    }
     localStorage.removeItem("access");
     localStorage.removeItem("refresh");
     setUser(null);

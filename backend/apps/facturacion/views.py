@@ -7,11 +7,14 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 
+from rest_framework.permissions import IsAuthenticated
+from apps.usuarios.permissions import IsAdminSupervisorOrContador
 from .models import Factura
 from .serializers import FacturaSerializer
 
 
 class FacturaViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated, IsAdminSupervisorOrContador]
     queryset = Factura.objects.select_related("cliente", "cotizacion", "orden_trabajo").prefetch_related("items").all()
     serializer_class = FacturaSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]

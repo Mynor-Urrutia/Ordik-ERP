@@ -3,11 +3,12 @@ from django.db.models.functions import TruncMonth
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from apps.usuarios.permissions import IsAdminSupervisorOrContador
 
 
 class ResumenDashboardView(APIView):
     """Datos agregados para el módulo de Reportes."""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAdminSupervisorOrContador]
 
     def get(self, request):
         from apps.facturacion.models import Factura

@@ -6,11 +6,14 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 
+from rest_framework.permissions import IsAuthenticated
+from apps.usuarios.permissions import ReadOrAdminSupervisorOrVendedor
 from .models import OrdenTrabajo
 from .serializers import OrdenTrabajoSerializer
 
 
 class OrdenTrabajoViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated, ReadOrAdminSupervisorOrVendedor]
     queryset = OrdenTrabajo.objects.select_related("cliente", "cotizacion").all()
     serializer_class = OrdenTrabajoSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]

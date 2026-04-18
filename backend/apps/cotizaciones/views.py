@@ -8,11 +8,14 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 
+from rest_framework.permissions import IsAuthenticated
+from apps.usuarios.permissions import IsAdminSupervisorOrVendedor
 from .models import Cotizacion
 from .serializers import CotizacionSerializer
 
 
 class CotizacionViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated, IsAdminSupervisorOrVendedor]
     queryset = (
         Cotizacion.objects.select_related("cliente")
         .prefetch_related("items")

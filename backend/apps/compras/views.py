@@ -6,11 +6,14 @@ from django_filters.rest_framework import DjangoFilterBackend
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
+from rest_framework.permissions import IsAuthenticated
+from apps.usuarios.permissions import IsAdminSupervisorOrBodeguero
 from .models import Compra, CompraHistorial
 from .serializers import CompraSerializer
 
 
 class CompraViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated, IsAdminSupervisorOrBodeguero]
     queryset = (
         Compra.objects
         .select_related("proveedor", "tipo_pago")

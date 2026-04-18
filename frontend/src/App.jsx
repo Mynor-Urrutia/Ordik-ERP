@@ -12,8 +12,9 @@ import CotizacionesPage  from "./pages/cotizaciones/CotizacionesPage";
 import InventarioPage    from "./pages/inventario/InventarioPage";
 import ComprasPage       from "./pages/compras/ComprasPage";
 import MaestrosPage      from "./pages/maestros/MaestrosPage";
-import FacturacionPage   from "./pages/facturacion/FacturacionPage";
-import ReportesPage      from "./pages/reportes/ReportesPage";
+import FacturacionPage     from "./pages/facturacion/FacturacionPage";
+import ReportesPage        from "./pages/reportes/ReportesPage";
+import ConfiguracionPage   from "./pages/configuracion/ConfiguracionPage";
 
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
                   <Route path="/maestros"         element={<MaestrosPage />} />
                   <Route path="/facturacion"      element={<FacturacionPage />} />
                   <Route path="/reportes"         element={<ReportesPage />} />
+                  <Route path="/configuracion"    element={<ConfiguracionPage />} />
                 </Routes>
               </Layout>
             </ProtectedRoute>
