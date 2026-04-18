@@ -7,7 +7,7 @@ export default function ProtectedRoute({ children }) {
   if (!ready) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-100 dark:bg-slate-900">
-        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        <div data-testid="loading-spinner" className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
