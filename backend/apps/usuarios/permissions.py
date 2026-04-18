@@ -93,6 +93,16 @@ class ReadOrAdminSupervisorOrBodeguero(BasePermission):
         return _get_rol(request.user) in (ADMIN, SUPERVISOR, BODEGUERO)
 
 
+class ReadOrAdminSupervisorOrContador(BasePermission):
+    """GET libre para todos; escritura admin/supervisor/contador."""
+    def has_permission(self, request, view):
+        if not (request.user and request.user.is_authenticated):
+            return False
+        if request.method in SAFE_METHODS:
+            return True
+        return _get_rol(request.user) in (ADMIN, SUPERVISOR, CONTADOR)
+
+
 # ── Matriz de permisos por módulo ───────────────────────────────────────────
 # Usada por el frontend para renderizar la tabla de Roles y Permisos.
 PERMISSION_MATRIX = {
@@ -107,4 +117,6 @@ PERMISSION_MATRIX = {
     "reportes":     {ADMIN: "full", SUPERVISOR: "full", VENDEDOR: "none", BODEGUERO: "none", CONTADOR: "full"},
     "maestros":     {ADMIN: "full", SUPERVISOR: "read", VENDEDOR: "none", BODEGUERO: "none", CONTADOR: "none"},
     "configuracion":{ADMIN: "full", SUPERVISOR: "none", VENDEDOR: "none", BODEGUERO: "none", CONTADOR: "none"},
+    "cxc":          {ADMIN: "full", SUPERVISOR: "full", VENDEDOR: "read", BODEGUERO: "none", CONTADOR: "full"},
+    "fel":          {ADMIN: "full", SUPERVISOR: "full", VENDEDOR: "none", BODEGUERO: "none", CONTADOR: "full"},
 }

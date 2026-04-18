@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faFilePdf, faTrash } from "@fortawesome/free-solid-svg-icons";
 import facturacionService from "../../services/api/facturacion";
+import felService from "../../services/api/fel";
 import { clientesService } from "../../services/api/clientes";
 import DataTable from "../../components/ui/DataTable";
 import Modal from "../../components/ui/Modal";
@@ -83,8 +84,8 @@ export default function FacturacionPage() {
       ]);
       setFacturas(fRes.data.results ?? fRes.data);
       setClientes(cRes.data.results ?? cRes.data);
-    } catch {
-      alert("No se pudieron cargar las facturas. Intentá de nuevo.");
+    } catch (err) {
+      alert(err.response?.data ? JSON.stringify(err.response.data) : "No se pudieron cargar las facturas. Intentá de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -206,6 +207,36 @@ export default function FacturacionPage() {
     }
   };
 
+  // ── FEL ─────────────────────────────────────────────────────────────────────
+  const [felLoading, setFelLoading] = useState(null);
+
+  const handleCertificarFEL = async (factura) => {
+    setFelLoading(factura.id);
+    try {
+      const res = await felService.certificar(factura.id);
+      alert(`Factura certificada FEL\nUUID: ${res.data.uuid}\nSerie: ${res.data.serie} | No. ${res.data.numero}`);
+      load();
+    } catch (err) {
+      alert(err.response?.data?.detail ?? JSON.stringify(err.response?.data) ?? "Error al certificar FEL");
+    } finally {
+      setFelLoading(null);
+    }
+  };
+
+  const handleAnularFEL = async (factura) => {
+    const motivo = prompt("Motivo de anulación FEL:");
+    if (!motivo) return;
+    setFelLoading(factura.id);
+    try {
+      await felService.anular(factura.id, motivo);
+      load();
+    } catch (err) {
+      alert(err.response?.data?.detail ?? JSON.stringify(err.response?.data) ?? "Error al anular FEL");
+    } finally {
+      setFelLoading(null);
+    }
+  };
+
   // ── Items helpers ────────────────────────────────────────────────────────────
   const setItemField = (idx, key, val) =>
     setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, [key]: val } : it)));
@@ -264,21 +295,31 @@ export default function FacturacionPage() {
         <div className="flex gap-1.5 justify-end">
           {f.estatus === "borrador" && (
             <button
-              onClick={() => handleEstatus(f, "emitida")}
-              className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 font-semibold"
+              onClick={() => handleCertificarFEL(f)}
+              disabled={felLoading === f.id}
+              className="text-xs px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 font-semibold disabled:opacity-50"
             >
-              Emitir
+              {felLoading === f.id ? "..." : "Certificar FEL"}
             </button>
           )}
           {f.estatus === "emitida" && (
-            <button
-              onClick={() => handleEstatus(f, "pagada")}
-              className="text-xs px-2 py-1 rounded bg-green-100 text-green-700 hover:bg-green-200 font-semibold"
-            >
-              Marcar pagada
-            </button>
+            <>
+              <button
+                onClick={() => handleEstatus(f, "pagada")}
+                className="text-xs px-2 py-1 rounded bg-green-100 text-green-700 hover:bg-green-200 font-semibold"
+              >
+                Marcar pagada
+              </button>
+              <button
+                onClick={() => handleAnularFEL(f)}
+                disabled={felLoading === f.id}
+                className="text-xs px-2 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200 font-semibold disabled:opacity-50"
+              >
+                {felLoading === f.id ? "..." : "Anular FEL"}
+              </button>
+            </>
           )}
-          {(f.estatus === "borrador" || f.estatus === "emitida") && (
+          {f.estatus === "borrador" && (
             <button
               onClick={() => handleEstatus(f, "anulada")}
               className="text-xs px-2 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200 font-semibold"

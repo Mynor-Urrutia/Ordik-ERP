@@ -18,6 +18,7 @@ import {
   faRightFromBracket,
   faCircleUser,
   faGear,
+  faHandHoldingDollar,
 } from "@fortawesome/free-solid-svg-icons";
 import { useTheme } from "../../hooks/useTheme";
 import { useAuth } from "../../contexts/AuthContext";
@@ -31,6 +32,7 @@ const NAV_MAIN = [
   { to: "/inventario",      label: "Inventario",         icon: faBoxesStacked },
   { to: "/compras",         label: "Compras",            icon: faCartShopping },
   { to: "/facturacion",     label: "Facturación",        icon: faFileInvoice },
+  { to: "/cxc",             label: "Cuentas x Cobrar",   icon: faHandHoldingDollar },
   { to: "/reportes",        label: "Reportes",           icon: faChartBar },
 ];
 

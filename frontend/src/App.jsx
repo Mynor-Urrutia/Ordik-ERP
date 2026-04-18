@@ -13,6 +13,7 @@ import InventarioPage    from "./pages/inventario/InventarioPage";
 import ComprasPage       from "./pages/compras/ComprasPage";
 import MaestrosPage      from "./pages/maestros/MaestrosPage";
 import FacturacionPage     from "./pages/facturacion/FacturacionPage";
+import CxCPage             from "./pages/cxc/CxCPage";
 import ReportesPage        from "./pages/reportes/ReportesPage";
 import ConfiguracionPage   from "./pages/configuracion/ConfiguracionPage";
 
@@ -39,6 +40,7 @@ function App() {
                   <Route path="/compras"          element={<ComprasPage />} />
                   <Route path="/maestros"         element={<MaestrosPage />} />
                   <Route path="/facturacion"      element={<FacturacionPage />} />
+                  <Route path="/cxc"              element={<CxCPage />} />
                   <Route path="/reportes"         element={<ReportesPage />} />
                   <Route path="/configuracion"    element={<ConfiguracionPage />} />
                 </Routes>
