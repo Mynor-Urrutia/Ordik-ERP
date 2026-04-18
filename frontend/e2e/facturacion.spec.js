@@ -38,8 +38,8 @@ test.describe("Facturación — golden path FEL", () => {
 
   test("CxC muestra las cards de resumen", async ({ page }) => {
     await page.goto("/cxc")
-    await expect(page.getByText("Por Cobrar")).toBeVisible()
-    await expect(page.getByText("Vencido")).toBeVisible()
+    await expect(page.getByText("Por Cobrar", { exact: true })).toBeVisible()
+    await expect(page.getByText("Vencido",    { exact: true })).toBeVisible()
     await expect(page.getByText("Cobrado este mes")).toBeVisible()
   })
 })

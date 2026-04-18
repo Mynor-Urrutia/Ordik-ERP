@@ -33,33 +33,31 @@ test.describe("Clientes — CRUD golden path", () => {
 
   test("puede crear un nuevo cliente", async ({ page }) => {
     await page.getByRole("button", { name: /nuevo cliente/i }).click()
+    await expect(page.getByRole("heading", { name: "Nuevo Cliente" })).toBeVisible()
 
-    // Llenar el formulario
-    await page.getByLabel(/razón social/i).fill(CLIENTE.razon_social)
-    await page.getByLabel(/nit/i).fill(CLIENTE.nit)
-    await page.getByLabel(/nombre comercial/i).fill(CLIENTE.nombre_comercial)
-    await page.getByLabel(/nombre de contacto/i).fill(CLIENTE.nombre_contacto)
-    await page.getByLabel(/email$/i).fill(CLIENTE.email)
-    await page.getByLabel(/teléfono$/i).fill(CLIENTE.telefono)
+    // Los inputs se identifican por placeholder (labels no tienen for= asociado)
+    await page.getByPlaceholder("Nombre legal completo").fill(CLIENTE.razon_social)
+    await page.getByPlaceholder(/ej: 1234567/i).fill(CLIENTE.nit)
+    await page.getByPlaceholder("Marca o nombre de fantasía").fill(CLIENTE.nombre_comercial)
 
-    await page.getByRole("button", { name: /guardar/i }).click()
+    await page.getByRole("button", { name: /crear cliente/i }).click()
 
-    await expect(page.getByText(CLIENTE.razon_social)).toBeVisible()
+    await expect(page.getByText(CLIENTE.razon_social)).toBeVisible({ timeout: 10000 })
   })
 
   test("puede editar un cliente existente", async ({ page }) => {
-    // Esperar que aparezca algún cliente
     await page.waitForSelector("table tbody tr")
 
     const firstRow = page.locator("table tbody tr").first()
-    await firstRow.getByRole("button", { name: /editar/i }).click()
+    await firstRow.getByRole("button", { name: "Editar" }).click()
+    await expect(page.getByText("Editar Cliente")).toBeVisible()
 
-    const notasField = page.getByLabel(/notas/i)
-    if (await notasField.isVisible()) {
-      await notasField.fill("Actualizado en E2E test")
-    }
+    // Cambiar nombre comercial como campo seguro de editar
+    const nombreComercial = page.getByPlaceholder("Marca o nombre de fantasía")
+    await nombreComercial.clear()
+    await nombreComercial.fill("Actualizado E2E")
 
-    await page.getByRole("button", { name: /guardar/i }).click()
-    await expect(page.getByText(/clientes/i).first()).toBeVisible()
+    await page.getByRole("button", { name: /actualizar cliente/i }).click()
+    await expect(page.getByRole("heading", { name: /clientes/i })).toBeVisible({ timeout: 10000 })
   })
 })

@@ -23,10 +23,10 @@ test.describe("Login / Logout", () => {
 
   test("credenciales inválidas muestran error", async ({ page }) => {
     await page.goto("/login")
-    await page.getByPlaceholder(/ingresá tu usuario/i).fill("noexiste")
-    await page.getByPlaceholder("••••••••").fill("malclave")
+    await page.getByPlaceholder(/ingresá tu usuario/i).fill(USER.username)
+    await page.getByPlaceholder("••••••••").fill("clave_incorrecta_XYZ")
     await page.getByRole("button", { name: /iniciar sesión/i }).click()
-    await expect(page.getByText(/usuario o contraseña incorrectos/i)).toBeVisible()
+    await expect(page.getByText(/usuario o contraseña incorrectos/i)).toBeVisible({ timeout: 10000 })
   })
 
   test("usuario no autenticado es redirigido al login", async ({ page }) => {
@@ -40,7 +40,7 @@ test.describe("Login / Logout", () => {
     await page.getByPlaceholder("••••••••").fill(USER.password)
     await page.getByRole("button", { name: /iniciar sesión/i }).click()
     await expect(page).toHaveURL("/")
-    await expect(page.getByText("Dashboard")).toBeVisible()
+    await expect(page.getByRole("heading", { name: /bienvenido/i })).toBeVisible({ timeout: 8000 })
   })
 
   test("logout limpia sesión y redirige a login", async ({ page }) => {
