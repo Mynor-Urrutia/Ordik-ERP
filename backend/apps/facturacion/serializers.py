@@ -33,10 +33,13 @@ class FacturaSerializer(serializers.ModelSerializer):
         read_only_fields = ["correlativo", "fecha_creacion"]
 
     def create(self, validated_data):
+        from .signals import crear_cxc_para_factura
         items_data = validated_data.pop("items")
         factura = Factura.objects.create(**validated_data)
         for item in items_data:
             FacturaItem.objects.create(factura=factura, **item)
+        if factura.estatus == "emitida" and factura.fecha_vencimiento:
+            crear_cxc_para_factura(factura)
         return factura
 
     def update(self, instance, validated_data):

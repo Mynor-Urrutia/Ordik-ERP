@@ -192,6 +192,14 @@ class EmpresaConfig(models.Model):
         help_text="Descripción de las actividades comerciales principales.")
     moneda = models.CharField(max_length=10, default="GTQ")
 
+    # FEL — Facturación Electrónica en Línea (Guatemala SAT)
+    fel_habilitado = models.BooleanField(default=False, verbose_name="FEL habilitado")
+    fel_proveedor  = models.CharField(max_length=100, blank=True, verbose_name="Proveedor certificador",
+        help_text="Ej: INFILE, G4S, Megaprint, etc.")
+    fel_api_url    = models.URLField(blank=True, verbose_name="URL del API del certificador")
+    fel_api_key    = models.CharField(max_length=500, blank=True, verbose_name="API Key / Token")
+    fel_nis        = models.CharField(max_length=50, blank=True, verbose_name="NIS / ID emisor")
+
     class Meta:
         verbose_name = "Configuración de Empresa"
 

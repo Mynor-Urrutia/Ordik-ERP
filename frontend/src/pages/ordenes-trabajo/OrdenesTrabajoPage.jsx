@@ -1,11 +1,12 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faPlus, faFilePdf, faCheckCircle,
-  faUser, faPhone, faMapPin, faEnvelope, faXmark,
+  faPlus, faFilePdf, faCheckCircle, faFileInvoiceDollar,
+  faUser, faPhone, faMapPin, faEnvelope, faXmark, faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { ordenesTrabajoService } from "../../services/api/ordenesTrabajo";
 import { cotizacionesService } from "../../services/api/cotizaciones";
+import facturacionService from "../../services/api/facturacion";
 import { clientesService } from "../../services/api/clientes";
 import { tiposClienteService, tiposTrabajoService, personalService, tiposEstatusService } from "../../services/api/maestros";
 import DataTable from "../../components/ui/DataTable";
@@ -37,7 +38,19 @@ const EMPTY = {
   telefono_contacto_obra: "",
   materiales_requeridos: "",
   notas_tecnico: "",
+  numero_oc:           "",
+  fecha_oc:            "",
+  monto_anticipo:      "",
+  fecha_anticipo:      "",
+  referencia_anticipo: "",
+  metodo_anticipo:     "",
 };
+
+const EMPTY_ITEM = () => ({
+  nombre: "", descripcion: "", unidad_medida: "Servicio",
+  cantidad: 1, precio_unitario: 0,
+  descuento_porcentaje: 0, porcentaje_iva: 12, porcentaje_isr: 0,
+});
 
 const EMPTY_CIERRE = {
   observaciones_cierre: "",
@@ -297,6 +310,11 @@ export default function OrdenesTrabajoPage() {
   const [cierreLoading, setCierreLoading] = useState(false);
   const [pdfLoading,    setPdfLoading]    = useState(null);
 
+  const [facturaOt,    setFacturaOt]    = useState(null);
+  const [facturaItems, setFacturaItems] = useState([]);
+  const [facturaForm,  setFacturaForm]  = useState({ fecha_emision: "", fecha_vencimiento: "", notas: "" });
+  const [facturaSaving, setFacturaSaving] = useState(false);
+
   useEffect(() => {
     load();
     const loadMaestros = async () => {
@@ -410,8 +428,8 @@ export default function OrdenesTrabajoPage() {
     try {
       await ordenesTrabajoService.remove(id);
       load();
-    } catch {
-      alert("No se pudo eliminar la orden. Intentá de nuevo.");
+    } catch (err) {
+      alert(err.response?.data ? JSON.stringify(err.response.data) : "No se pudo eliminar la orden. Intentá de nuevo.");
     }
   };
 
@@ -450,6 +468,73 @@ export default function OrdenesTrabajoPage() {
     }
   };
 
+  // ── Facturar desde OT ─────────────────────────────────────────────────────
+  const abrirFacturarOt = async (ot) => {
+    setFacturaOt(ot);
+    setFacturaForm({
+      fecha_emision:    new Date().toISOString().split("T")[0],
+      fecha_vencimiento: "",
+      notas: "",
+    });
+
+    if (ot.cotizacion) {
+      try {
+        const { data } = await cotizacionesService.get(ot.cotizacion);
+        const mapped = (data.items || []).map((it) => ({
+          nombre:               it.nombre_producto,
+          descripcion:          it.descripcion || "",
+          unidad_medida:        it.unidad_medida || "Servicio",
+          cantidad:             it.cantidad,
+          precio_unitario:      it.precio_unitario,
+          descuento_porcentaje: it.descuento_porcentaje || 0,
+          porcentaje_iva:       it.porcentaje_iva || 12,
+          porcentaje_isr:       it.porcentaje_isr || 0,
+        }));
+        setFacturaItems(mapped.length ? mapped : [{ ...EMPTY_ITEM(), nombre: ot.tipo_trabajo || "" }]);
+      } catch (err) {
+        alert(err.response?.data ? JSON.stringify(err.response.data) : "No se pudo cargar la cotización. Se usarán ítems en blanco.");
+        setFacturaItems([{ ...EMPTY_ITEM(), nombre: ot.tipo_trabajo || "" }]);
+      }
+    } else {
+      setFacturaItems([{ ...EMPTY_ITEM(), nombre: ot.tipo_trabajo || "" }]);
+    }
+  };
+
+  const setFacturaItem = (idx, k, v) =>
+    setFacturaItems((prev) => prev.map((it, i) => i === idx ? { ...it, [k]: v } : it));
+
+  const handleFacturaSubmit = async (e) => {
+    e.preventDefault();
+    if (facturaItems.length === 0) return alert("Agregá al menos un ítem.");
+    setFacturaSaving(true);
+    const payload = {
+      cliente:           facturaOt.cliente,
+      orden_trabajo:     facturaOt.id,
+      cotizacion:        facturaOt.cotizacion || null,
+      fecha_emision:     facturaForm.fecha_emision,
+      fecha_vencimiento: facturaForm.fecha_vencimiento || null,
+      estatus:           "emitida",
+      notas:             facturaForm.notas,
+      items:             facturaItems.map((it) => ({
+        ...it,
+        cantidad:              Number(it.cantidad),
+        precio_unitario:       Number(it.precio_unitario),
+        descuento_porcentaje:  Number(it.descuento_porcentaje),
+        porcentaje_iva:        Number(it.porcentaje_iva),
+        porcentaje_isr:        Number(it.porcentaje_isr),
+      })),
+    };
+    try {
+      await facturacionService.create(payload);
+      setFacturaOt(null);
+      alert("Factura generada correctamente.");
+    } catch (err) {
+      alert(err.response?.data ? JSON.stringify(err.response.data) : "Error al generar la factura");
+    } finally {
+      setFacturaSaving(false);
+    }
+  };
+
   // ── PDF ───────────────────────────────────────────────────────────────────
   const handleExportPdf = async (ot) => {
     setPdfLoading(ot.id);
@@ -476,6 +561,14 @@ export default function OrdenesTrabajoPage() {
               className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-teal-50 hover:bg-teal-100 text-teal-700 rounded-md border border-teal-200 transition-colors"
             >
               <FontAwesomeIcon icon={faCheckCircle} className="text-xs" /> Cerrar
+            </button>
+          )}
+          {r.fecha_finalizado && r.cliente && (
+            <button
+              onClick={(e) => { e.stopPropagation(); abrirFacturarOt(r); }}
+              className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-md border border-indigo-200 transition-colors"
+            >
+              <FontAwesomeIcon icon={faFileInvoiceDollar} className="text-xs" /> Facturar
             </button>
           )}
           <button
@@ -686,6 +779,47 @@ export default function OrdenesTrabajoPage() {
               </div>
             </Section>
 
+            {/* ── OC del cliente / Anticipo ─────────────────────────────────── */}
+            <Section title="OC del Cliente / Anticipo">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">N° de OC del cliente</label>
+                  <input value={form.numero_oc} onChange={(e) => set("numero_oc", e.target.value)}
+                    placeholder="Ej: OC-2024-001" className={inputCls} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Fecha de la OC</label>
+                  <input type="date" value={form.fecha_oc} onChange={(e) => set("fecha_oc", e.target.value)} className={inputCls} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Monto anticipo (Q)</label>
+                  <input type="number" min="0" step="0.01" value={form.monto_anticipo}
+                    onChange={(e) => set("monto_anticipo", e.target.value)}
+                    placeholder="0.00" className={inputCls} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Fecha de recepción</label>
+                  <input type="date" value={form.fecha_anticipo} onChange={(e) => set("fecha_anticipo", e.target.value)} className={inputCls} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Método de pago anticipo</label>
+                  <select value={form.metodo_anticipo} onChange={(e) => set("metodo_anticipo", e.target.value)} className={inputCls}>
+                    <option value="">— Sin anticipo —</option>
+                    <option value="transferencia">Transferencia</option>
+                    <option value="cheque">Cheque</option>
+                    <option value="efectivo">Efectivo</option>
+                    <option value="tarjeta">Tarjeta</option>
+                    <option value="otro">Otro</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Referencia / Boleta</label>
+                  <input value={form.referencia_anticipo} onChange={(e) => set("referencia_anticipo", e.target.value)}
+                    placeholder="N° de boleta, transferencia o cheque" className={inputCls} />
+                </div>
+              </div>
+            </Section>
+
             {/* ── Acciones ─────────────────────────────────────────────────── */}
             <div className="flex justify-end gap-2 pt-2 border-t dark:border-slate-700">
               <button
@@ -699,6 +833,199 @@ export default function OrdenesTrabajoPage() {
                 className="px-5 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-60 transition-colors font-semibold"
               >
                 {saving ? "Guardando…" : editing ? "Actualizar OT" : "Crear OT"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ── Modal facturar desde OT ───────────────────────────────────────── */}
+      {facturaOt && (
+        <Modal
+          title={`Generar Factura — OT-${String(facturaOt.id).padStart(4, "0")}`}
+          onClose={() => setFacturaOt(null)}
+          size="xl"
+        >
+          <form onSubmit={handleFacturaSubmit} className="space-y-5">
+
+            {/* Resumen OT */}
+            <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-lg px-4 py-3 text-sm text-gray-600 dark:text-slate-300 space-y-1">
+              <p><span className="font-semibold">Cliente:</span> {facturaOt.cliente_nombre || "—"}</p>
+              <p><span className="font-semibold">Trabajo:</span> {facturaOt.tipo_trabajo}</p>
+              {facturaOt.tecnico_asignado && <p><span className="font-semibold">Técnico:</span> {facturaOt.tecnico_asignado}</p>}
+              {facturaOt.numero_oc && <p><span className="font-semibold">OC del cliente:</span> {facturaOt.numero_oc}{facturaOt.fecha_oc ? ` — ${facturaOt.fecha_oc}` : ""}</p>}
+              {facturaOt.observaciones_cierre && (
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">{facturaOt.observaciones_cierre}</p>
+              )}
+            </div>
+
+            {/* Anticipo registrado */}
+            {facturaOt.monto_anticipo && (
+              <div className="flex items-center justify-between bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3">
+                <div>
+                  <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wide mb-0.5">Anticipo registrado</p>
+                  <p className="text-sm text-amber-800 dark:text-amber-300">
+                    Q {Number(facturaOt.monto_anticipo).toFixed(2)}
+                    {facturaOt.referencia_anticipo && <span className="text-xs ml-2 text-amber-600 dark:text-amber-500">Ref: {facturaOt.referencia_anticipo}</span>}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-amber-600 dark:text-amber-500">Se aplicará automáticamente como primer pago en CxC al generar la factura.</p>
+                </div>
+              </div>
+            )}
+
+            {/* Fechas y notas */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Fecha de Emisión *</label>
+                <input type="date" required value={facturaForm.fecha_emision}
+                  onChange={(e) => setFacturaForm((f) => ({ ...f, fecha_emision: e.target.value }))}
+                  className={inputCls} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Fecha de Vencimiento</label>
+                <input type="date" value={facturaForm.fecha_vencimiento}
+                  onChange={(e) => setFacturaForm((f) => ({ ...f, fecha_vencimiento: e.target.value }))}
+                  className={inputCls} />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Notas internas</label>
+                <textarea rows={2} value={facturaForm.notas}
+                  onChange={(e) => setFacturaForm((f) => ({ ...f, notas: e.target.value }))}
+                  placeholder="Observaciones para la factura…"
+                  className={inputCls + " resize-none"} />
+              </div>
+            </div>
+
+            {/* Ítems */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Ítems de la factura</h4>
+                <button type="button"
+                  onClick={() => setFacturaItems((prev) => [...prev, EMPTY_ITEM()])}
+                  className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium">
+                  <FontAwesomeIcon icon={faPlus} /> Agregar ítem
+                </button>
+              </div>
+              <div className="space-y-3">
+                {facturaItems.map((it, idx) => (
+                  <div key={idx} className="border border-gray-200 dark:border-slate-600 rounded-lg p-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <input
+                        required
+                        value={it.nombre}
+                        onChange={(e) => setFacturaItem(idx, "nombre", e.target.value)}
+                        placeholder="Nombre del servicio o producto *"
+                        className={inputCls}
+                      />
+                      {facturaItems.length > 1 && (
+                        <button type="button"
+                          onClick={() => setFacturaItems((prev) => prev.filter((_, i) => i !== idx))}
+                          className="text-red-400 hover:text-red-600 shrink-0">
+                          <FontAwesomeIcon icon={faTrash} className="text-sm" />
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      value={it.descripcion}
+                      onChange={(e) => setFacturaItem(idx, "descripcion", e.target.value)}
+                      placeholder="Descripción (opcional)"
+                      className={inputCls}
+                    />
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-0.5">Unidad</label>
+                        <input value={it.unidad_medida}
+                          onChange={(e) => setFacturaItem(idx, "unidad_medida", e.target.value)}
+                          placeholder="Servicio"
+                          className={inputCls} />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-0.5">Cantidad</label>
+                        <input type="number" min="0" step="0.01" value={it.cantidad}
+                          onChange={(e) => setFacturaItem(idx, "cantidad", e.target.value)}
+                          className={inputCls} />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-0.5">Precio unitario</label>
+                        <input type="number" min="0" step="0.01" value={it.precio_unitario}
+                          onChange={(e) => setFacturaItem(idx, "precio_unitario", e.target.value)}
+                          className={inputCls} />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-0.5">Descuento %</label>
+                        <input type="number" min="0" max="100" step="0.01" value={it.descuento_porcentaje}
+                          onChange={(e) => setFacturaItem(idx, "descuento_porcentaje", e.target.value)}
+                          className={inputCls} />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-0.5">IVA %</label>
+                        <input type="number" min="0" step="0.01" value={it.porcentaje_iva}
+                          onChange={(e) => setFacturaItem(idx, "porcentaje_iva", e.target.value)}
+                          className={inputCls} />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-0.5">ISR %</label>
+                        <input type="number" min="0" step="0.01" value={it.porcentaje_isr}
+                          onChange={(e) => setFacturaItem(idx, "porcentaje_isr", e.target.value)}
+                          className={inputCls} />
+                      </div>
+                    </div>
+                    <p className="text-right text-xs text-slate-500 dark:text-slate-400">
+                      Subtotal:{" "}
+                      <span className="font-semibold text-slate-700 dark:text-slate-200">
+                        Q {(
+                          it.cantidad * it.precio_unitario *
+                          (1 - it.descuento_porcentaje / 100) *
+                          (1 + it.porcentaje_iva / 100)
+                        ).toFixed(2)}
+                      </span>
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Totales */}
+            {(() => {
+              const totalFactura = facturaItems.reduce((acc, it) => {
+                const neto = Number(it.cantidad) * Number(it.precio_unitario) * (1 - Number(it.descuento_porcentaje) / 100);
+                return acc + neto * (1 + Number(it.porcentaje_iva) / 100);
+              }, 0);
+              const anticipo = Number(facturaOt.monto_anticipo) || 0;
+              const saldo = Math.max(0, totalFactura - anticipo);
+              return (
+                <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg px-4 py-3 space-y-1 text-sm">
+                  <div className="flex justify-between text-slate-600 dark:text-slate-300">
+                    <span>Total factura:</span>
+                    <span className="font-semibold">Q {totalFactura.toFixed(2)}</span>
+                  </div>
+                  {anticipo > 0 && (
+                    <>
+                      <div className="flex justify-between text-amber-600 dark:text-amber-400">
+                        <span>Anticipo a aplicar:</span>
+                        <span>− Q {anticipo.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-emerald-700 dark:text-emerald-400 font-bold border-t dark:border-slate-600 pt-1 mt-1">
+                        <span>Saldo a cobrar al cliente:</span>
+                        <span>Q {saldo.toFixed(2)}</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })()}
+
+            <div className="flex justify-end gap-2 pt-3 border-t dark:border-slate-700">
+              <button type="button" onClick={() => setFacturaOt(null)}
+                className="px-4 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-300">
+                Cancelar
+              </button>
+              <button type="submit" disabled={facturaSaving}
+                className="inline-flex items-center gap-2 px-5 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-60 font-semibold">
+                <FontAwesomeIcon icon={faFileInvoiceDollar} />
+                {facturaSaving ? "Generando…" : "Generar Factura"}
               </button>
             </div>
           </form>

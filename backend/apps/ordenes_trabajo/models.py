@@ -38,6 +38,14 @@ class OrdenTrabajo(models.Model):
     materiales_requeridos    = models.TextField(blank=True)
     notas_tecnico            = models.TextField(blank=True)
 
+    # ── OC del cliente / Anticipo ────────────────────────────────────────────
+    numero_oc           = models.CharField(max_length=100, blank=True)
+    fecha_oc            = models.DateField(null=True, blank=True)
+    monto_anticipo      = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    fecha_anticipo      = models.DateField(null=True, blank=True)
+    referencia_anticipo = models.CharField(max_length=200, blank=True)
+    metodo_anticipo     = models.CharField(max_length=20, blank=True)
+
     # ── Campos de cierre formal ──────────────────────────────────────────────
     observaciones_cierre = models.TextField(blank=True)
     horas_trabajadas = models.DecimalField(

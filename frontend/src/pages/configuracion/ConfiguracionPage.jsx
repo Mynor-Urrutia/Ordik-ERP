@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faUserPlus, faEdit, faTrash, faKey, faShieldHalved, faUsers,
-  faCheck, faMinus, faEye,
+  faCheck, faMinus, faEye, faFileInvoiceDollar, faCircleCheck, faCircleXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import usuariosService from "../../services/api/usuarios";
+import { empresaService } from "../../services/api/maestros";
 import Modal from "../../components/ui/Modal";
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -447,9 +448,128 @@ function RolesPermisosTab() {
 }
 
 // ── Página principal ──────────────────────────────────────────────────────────
+// ── Tab: FEL / Certificador ───────────────────────────────────────────────────
+function FelTab() {
+  const [form,    setForm]    = useState(null);
+  const [saving,  setSaving]  = useState(false);
+  const [saved,   setSaved]   = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data } = await empresaService.get();
+        setForm({
+          fel_habilitado: data.fel_habilitado ?? false,
+          fel_proveedor:  data.fel_proveedor  ?? "",
+          fel_api_url:    data.fel_api_url    ?? "",
+          fel_api_key:    data.fel_api_key    ?? "",
+          fel_nis:        data.fel_nis        ?? "",
+        });
+      } catch (err) {
+        alert(err.response?.data ? JSON.stringify(err.response.data) : "No se pudo cargar la configuración FEL.");
+      }
+    };
+    load();
+  }, []);
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await empresaService.update({ ...form });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      alert(err.response?.data ? JSON.stringify(err.response.data) : "Error al guardar la configuración FEL.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!form) return <p className="text-sm text-slate-400 py-8 text-center">Cargando…</p>;
+
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  return (
+    <form onSubmit={handleSave} className="max-w-2xl space-y-6">
+      {/* Estado actual */}
+      <div className={`flex items-center gap-3 rounded-xl px-4 py-3 border ${
+        form.fel_habilitado
+          ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800"
+          : "bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800"
+      }`}>
+        <FontAwesomeIcon
+          icon={form.fel_habilitado ? faCircleCheck : faCircleXmark}
+          className={`text-lg ${form.fel_habilitado ? "text-emerald-600" : "text-amber-500"}`}
+        />
+        <div>
+          <p className={`text-sm font-semibold ${form.fel_habilitado ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400"}`}>
+            {form.fel_habilitado ? "FEL habilitado — el sistema emitirá facturas electrónicas." : "FEL no configurado — los documentos se generarán como recibos."}
+          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            {form.fel_habilitado
+              ? "Las facturas se enviarán al certificador para su validación ante la SAT."
+              : "Configurá los datos del certificador para habilitar la facturación electrónica (FEL)."}
+          </p>
+        </div>
+      </div>
+
+      {/* Toggle FEL */}
+      <div>
+        <label className="flex items-center gap-3 cursor-pointer select-none">
+          <div
+            onClick={() => set("fel_habilitado", !form.fel_habilitado)}
+            className={`relative w-11 h-6 rounded-full transition-colors ${form.fel_habilitado ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"}`}
+          >
+            <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.fel_habilitado ? "translate-x-5" : ""}`} />
+          </div>
+          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Habilitar facturación electrónica (FEL)</span>
+        </label>
+      </div>
+
+      {/* Datos del certificador */}
+      <div className="space-y-4">
+        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Datos del certificador</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={labelCls}>Proveedor certificador</label>
+            <input value={form.fel_proveedor} onChange={(e) => set("fel_proveedor", e.target.value)}
+              placeholder="Ej: INFILE, G4S, Megaprint…" className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls}>NIS / ID emisor</label>
+            <input value={form.fel_nis} onChange={(e) => set("fel_nis", e.target.value)}
+              placeholder="ID asignado por el certificador" className={inputCls} />
+          </div>
+          <div className="col-span-2">
+            <label className={labelCls}>URL del API</label>
+            <input value={form.fel_api_url} onChange={(e) => set("fel_api_url", e.target.value)}
+              placeholder="https://api.certificador.gt/v1/" className={inputCls} />
+          </div>
+          <div className="col-span-2">
+            <label className={labelCls}>API Key / Token de autenticación</label>
+            <input type="password" value={form.fel_api_key} onChange={(e) => set("fel_api_key", e.target.value)}
+              placeholder="Token proporcionado por el certificador" className={inputCls} />
+            <p className="text-xs text-slate-400 mt-1">Se almacena de forma segura y nunca se muestra en reportes ni PDFs.</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3 pt-2">
+        <button type="submit" disabled={saving}
+          className="px-5 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-60 font-semibold">
+          {saving ? "Guardando…" : "Guardar configuración FEL"}
+        </button>
+        {saved && <span className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">Guardado correctamente.</span>}
+      </div>
+    </form>
+  );
+}
+
 const TABS = [
   { id: "usuarios",       label: "Usuarios",        icon: faUsers },
   { id: "roles-permisos", label: "Roles y permisos", icon: faShieldHalved },
+  { id: "fel",            label: "FEL / Certificador", icon: faFileInvoiceDollar },
 ];
 
 export default function ConfiguracionPage() {
@@ -484,6 +604,7 @@ export default function ConfiguracionPage() {
       {/* Contenido */}
       {tab === "usuarios"       && <UsuariosTab />}
       {tab === "roles-permisos" && <RolesPermisosTab />}
+      {tab === "fel"            && <FelTab />}
     </div>
   );
 }

@@ -30,6 +30,10 @@ class FacturaViewSet(viewsets.ModelViewSet):
         empresa = EmpresaConfig.objects.first()
         cliente = factura.cliente
 
+        fel_activo   = bool(empresa and empresa.fel_habilitado and empresa.fel_api_key)
+        tipo_doc     = "FACTURA" if fel_activo else "RECIBO"
+        es_borrador  = factura.estatus == "borrador"
+
         response = HttpResponse(content_type="application/pdf")
         response["Content-Disposition"] = f'attachment; filename="{factura.correlativo}.pdf"'
 
@@ -85,7 +89,7 @@ class FacturaViewSet(viewsets.ModelViewSet):
         # ── HEADER ───────────────────────────────────────────────────────────
         rect_fill(0, H - 80, W, 80, C_NAVY)
 
-        nombre_empresa = (empresa.nombre if empresa else "ERP — Mi Empresa")
+        nombre_empresa = (empresa.razon_social or empresa.nombre_comercial if empresa else "ERP — Mi Empresa")
         p.setFont("Helvetica-Bold", 18)
         p.setFillColor(WHITE)
         p.drawString(M, H - 38, nombre_empresa)
@@ -112,8 +116,20 @@ class FacturaViewSet(viewsets.ModelViewSet):
 
         # ── TÍTULO + CORRELATIVO ──────────────────────────────────────────────
         y = H - 100
-        text_at(M, y, "FACTURA", size=22, color=C_NAVY, bold=True)
+        titulo = f"BORRADOR DE {tipo_doc}" if es_borrador else tipo_doc
+        text_at(M, y, titulo, size=22, color=C_NAVY, bold=True)
         text_right(W - M, y, factura.correlativo, size=14, color=C_BLUE, bold=True)
+
+        # Marca de agua BORRADOR
+        if es_borrador:
+            p.saveState()
+            p.setFillColor(colors.HexColor("#f59e0b"))
+            p.setFillAlpha(0.08)
+            p.setFont("Helvetica-Bold", 90)
+            p.translate(W / 2, H / 2)
+            p.rotate(35)
+            p.drawCentredString(0, 0, "BORRADOR")
+            p.restoreState()
 
         # ── DATOS FACTURA / CLIENTE ───────────────────────────────────────────
         y -= 8
@@ -123,7 +139,7 @@ class FacturaViewSet(viewsets.ModelViewSet):
         # Caja izquierda — datos factura
         rect_fill(M, y - box_h, half, box_h, C_BLUE_XL, C_BLUE_LT)
         rect_fill(M, y - 16, half, 16, C_BLUE_LT, radius=3)
-        text_at(M + 8, y - 12, "DATOS DE LA FACTURA", size=8, color=C_BLUE, bold=True)
+        text_at(M + 8, y - 12, f"DATOS DEL {tipo_doc}", size=8, color=C_BLUE, bold=True)
 
         fy = y - 28
         text_at(M + 8, fy, "Emisión:", size=8, color=C_MUTED)
@@ -154,8 +170,8 @@ class FacturaViewSet(viewsets.ModelViewSet):
         if cliente.telefono:
             text_at(cx + 8, cy, f"Tel: {cliente.telefono}", size=8, color=C_MUTED)
             cy -= 13
-        if cliente.correo:
-            text_at(cx + 8, cy, cliente.correo, size=8, color=C_MUTED)
+        if cliente.email:
+            text_at(cx + 8, cy, cliente.email, size=8, color=C_MUTED)
 
         # ── TABLA DE ÍTEMS ────────────────────────────────────────────────────
         y -= box_h + 18
@@ -251,8 +267,9 @@ class FacturaViewSet(viewsets.ModelViewSet):
         p.setFont("Helvetica", 7)
         p.setFillColor(colors.HexColor("#94a3b8"))
         if empresa:
-            p.drawCentredString(W / 2, 18, f"{nombre_empresa}  ·  {empresa.direccion or ''}  ·  {empresa.correo or ''}")
-        p.drawCentredString(W / 2, 8, f"Documento generado electrónicamente — {factura.correlativo}")
+            p.drawCentredString(W / 2, 18, f"{nombre_empresa}  ·  {empresa.direccion or ''}  ·  {empresa.email or ''}")
+        doc_label = "Vista previa — sujeta a cambios" if es_borrador else f"{tipo_doc} generado electrónicamente"
+        p.drawCentredString(W / 2, 8, f"{doc_label} — {factura.correlativo}")
 
         p.showPage()
         p.save()

@@ -53,6 +53,15 @@ class IsAdminSupervisorOrContador(BasePermission):
         )
 
 
+class IsAdminSupervisorBodegueroOrContador(BasePermission):
+    """Admin, supervisor, bodeguero o contador — compras e inventario."""
+    def has_permission(self, request, view):
+        return bool(
+            request.user and request.user.is_authenticated
+            and _get_rol(request.user) in (ADMIN, SUPERVISOR, BODEGUERO, CONTADOR)
+        )
+
+
 class IsAnyAuthenticated(BasePermission):
     """Cualquier usuario autenticado — módulos de solo lectura universal."""
     def has_permission(self, request, view):

@@ -52,6 +52,10 @@ class CuentaPorCobrar(models.Model):
             self.estatus = "pendiente"
         self.save(update_fields=["saldo_pendiente", "estatus", "fecha_actualizacion"])
 
+        if self.estatus == "pagada" and self.factura.estatus not in ("pagada", "anulada"):
+            self.factura.estatus = "pagada"
+            self.factura.save(update_fields=["estatus"])
+
 
 class PagoCxC(models.Model):
     cuenta         = models.ForeignKey(CuentaPorCobrar, on_delete=models.CASCADE, related_name="pagos")
